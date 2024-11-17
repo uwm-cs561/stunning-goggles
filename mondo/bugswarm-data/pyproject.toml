@@ -9,6 +9,7 @@ packages = [{include = "downloader", from = "src"}]
 [tool.poetry.dependencies]
 python = "^3.13"
 bugswarm-common = "^2024.8.26"
+ratelimit = "^2.2.1"
 
 
 [build-system]
@@ -16,4 +17,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-main = "downloader.main:main"
+list = "downloader.download_list:main"

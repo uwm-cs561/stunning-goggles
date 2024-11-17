@@ -114,12 +114,27 @@ class DatabaseAPI(object):
             DatabaseAPI._artifact_image_tag_endpoint(image_tag), error_if_not_found
         )
 
+    def list_artifacts_gen(self):
+        """
+        Return a List of artifacts that has at least one reproduce_successes.
+        """
+        api_filter = '{"reproduce_successes":{"$gt":0}}'
+        return self.filter_artifacts_gen(api_filter)
+
     def list_artifacts(self) -> List:
         """
         Return a List of artifacts that has at least one reproduce_successes.
         """
         api_filter = '{"reproduce_successes":{"$gt":0}}'
         return self.filter_artifacts(api_filter)
+
+    def filter_artifacts_gen(self, api_filter: str):
+        """
+        Return a list of artifacts based on custom filter.
+        :param api_filter: a string filter.
+        e.g.: api_filter = '{"reproduce_successes":{"$gt":0},"lang":{"$in":["Java","Python"]}}'
+        """
+        return self._filter_gen(DatabaseAPI._artifacts_endpoint(), api_filter)
 
     def filter_artifacts(self, api_filter: str) -> List:
         """
@@ -1158,36 +1173,36 @@ class DatabaseAPI(object):
             log.error(resp.content)
         return resp
 
-    def _iter_pages(self, start_link: str) -> List:
+    def _iter_pages_gen(self, start_link: str):
         """
-        Returns a list of all the results by following the next link chain starting with `start_link`.
+        Custom generator based on _iter_pages
         """
         if not isinstance(start_link, str):
             raise TypeError
         if not start_link:
             raise ValueError
-        results = []
         next_link = start_link
-        try:
-            while next_link:
+        while next_link:
+            next_resp = None  # type: Response | None
+            try:
                 next_resp = self._get(next_link)
-                next_resp.raise_for_status()
-                next_json = next_resp.json()
-                try:
-                    if not next_json["_items"]:
-                        break
-                    results += next_json["_items"]
-                except KeyError:
+            except Exception as e:
+                yield [], e
+                continue
+            next_resp.raise_for_status()
+            next_json = next_resp.json()
+            try:
+                if not next_json["_items"]:
                     break
-                try:
-                    next_link = urljoin(next_link, next_json["_links"]["next"]["href"])
-                except KeyError:
-                    break
-        except Exception as e:
-            print(e)
-            return results
-        return results
-
+                res = next_json["_items"] # type: list
+                yield res, None
+            except KeyError as e:
+                break
+            try:
+                next_link = urljoin(next_link, next_json["_links"]["next"]["href"])
+            except KeyError as e:
+                break
+        return None, None
 
     def _iter_pages(self, start_link: str) -> List:
         """
@@ -1219,6 +1234,16 @@ class DatabaseAPI(object):
             return results
         return results
 
+    def _list_gen(self, endpoint: Endpoint):
+        """
+        Returns all results from the current page to the last page, inclusive.
+        """
+        if not isinstance(endpoint, Endpoint):
+            raise TypeError
+        if not endpoint:
+            raise ValueError
+        return self._iter_pages_gen(endpoint)
+
     def _list(self, endpoint: Endpoint) -> List:
         """
         Returns all results from the current page to the last page, inclusive.
@@ -1228,6 +1253,19 @@ class DatabaseAPI(object):
         if not endpoint:
             raise ValueError
         return self._iter_pages(endpoint)
+
+    def _filter_gen(self, endpoint: Endpoint, api_filter: str):
+        if not isinstance(endpoint, Endpoint):
+            raise TypeError
+        if not endpoint:
+            raise ValueError
+        if not isinstance(api_filter, str):
+            raise TypeError
+        if not api_filter:
+            raise ValueError
+        # Append the filter as a url parameter.
+        url = "{}?where={}".format(endpoint, api_filter)
+        return self._iter_pages_gen(url)
 
     def _filter(self, endpoint: Endpoint, api_filter: str) -> List:
         if not isinstance(endpoint, Endpoint):
