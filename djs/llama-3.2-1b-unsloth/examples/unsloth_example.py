@@ -4,10 +4,12 @@ import torch
 from trl import SFTTrainer
 from transformers import TrainingArguments
 from datasets import load_dataset
+
 max_seq_length = 2048 # Supports RoPE Scaling interally, so choose any!
-# Get LAION dataset
-url = "https://huggingface.co/datasets/laion/OIG/resolve/main/unified_chip2.jsonl"
-dataset = load_dataset("json", data_files = {"train" : url}, split = "train")
+
+# # Get LAION dataset
+# url = "https://huggingface.co/datasets/laion/OIG/resolve/main/unified_chip2.jsonl"
+# dataset = load_dataset("json", data_files = {"train" : url}, split = "train")
 
 # 4bit pre quantized models we support for 4x faster downloading + no OOMs.
 fourbit_models = [
@@ -43,7 +45,7 @@ model = FastLanguageModel.get_peft_model(
 
 trainer = SFTTrainer(
     model = model,
-    train_dataset = dataset,
+    train_dataset = None, # dataset,
     dataset_text_field = "text",
     max_seq_length = max_seq_length,
     tokenizer = tokenizer,
@@ -60,4 +62,5 @@ trainer = SFTTrainer(
         seed = 3407,
     ),
 )
-trainer.train()
+
+# trainer.train()
