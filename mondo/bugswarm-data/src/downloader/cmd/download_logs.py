@@ -9,6 +9,7 @@ from downloader.vendor.bugswarm_database_api import DatabaseAPI
 import downloader.typing.bugswarm as typ_bugswarm
 
 ARTIFACTS_JSON_PATH = "data/2024-11-17-02-09-45-artifacts.json"
+LOG_DIR = "data/job_logs"
 
 bugswarmapi = DatabaseAPI()
 
@@ -87,7 +88,7 @@ def get_logs(savedir: str, artifacts_json_path: str):
 
 def main():
     print("Start Downloading")
-    dir_name = f"data/job_logs"
+    dir_name = LOG_DIR
     os.makedirs(dir_name, exist_ok=True)
     art_path = os.path.join(os.getcwd(), ARTIFACTS_JSON_PATH)
     get_logs(dir_name, art_path)
