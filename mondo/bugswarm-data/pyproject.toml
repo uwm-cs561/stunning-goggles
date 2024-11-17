@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "bugswarm-data"
+version = "0.1.0"
+description = ""
+authors = ["Mondo <mondogao@gmail.com>"]
+readme = "README.md"
+packages = [{include = "downloader", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+bugswarm-common = "^2024.8.26"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+main = "downloader.main:main"

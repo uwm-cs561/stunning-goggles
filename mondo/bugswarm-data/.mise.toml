@@ -1,4 +1,5 @@
 [tools]
 python = "latest"
+jq = "latest"
 [env]
 _.python.venv = { path = ".venv" }
