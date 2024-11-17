@@ -1,3 +1,10 @@
+## Additions to Template
+
+outputs/
+saved_weights/
+
+##
+
 # Created by https://www.toptal.com/developers/gitignore/api/macos,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,python
 
@@ -8,7 +15,8 @@
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
