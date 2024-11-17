@@ -17,4 +17,5 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-list = "downloader.download_list:main"
+list = "downloader.cmd.download_list:main"
+logs = "downloader.cmd.download_logs:main"
