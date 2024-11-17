@@ -1,2 +1,2 @@
 [env]
-_.python.venv = "/shared/opt/miniconda3/envs/unsloth" # can be absolute
+_.python.venv = "/shared/opt/miniconda3/envs/unsloth"
