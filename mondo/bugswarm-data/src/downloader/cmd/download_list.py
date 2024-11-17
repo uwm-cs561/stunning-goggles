@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import os
 from typing import Generator
 from downloader.vendor.bugswarm_database_api import DatabaseAPI
 from ratelimit import limits, sleep_and_retry
@@ -24,7 +25,9 @@ def list_artifacts():
 
 def main():
     print("Start Downloading")
-    out_name = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-artifacts.json"
+    dir_name = f"data"
+    os.makedirs(dir_name, exist_ok=True)
+    out_name = f"{dir_name}/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-artifacts.json"
 
     with open(out_name, "w") as f:
         all = []

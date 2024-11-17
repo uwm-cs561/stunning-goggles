@@ -379,6 +379,21 @@ class DatabaseAPI(object):
         }
         return self._insert(DatabaseAPI._logs_endpoint(), log_entry, "log")
 
+    def get_build_log_raw_resp(
+        self, job_id: str, error_if_not_found: bool = True
+    ) -> Response:
+        """
+        Get artifact failed or passed build log based on job id.
+        :param job_id: The job id corresponding to the passed or failed build log.
+        :param error_if_not_found: return err if the image tag not found. default True.
+        :return: The build_log.
+        """
+        if not isinstance(job_id, str):
+            raise TypeError
+        if not job_id:
+            raise ValueError
+        return self._get(DatabaseAPI._logs_job_id_endpoint(job_id), error_if_not_found)
+
     def get_build_log(self, job_id: str, error_if_not_found: bool = True) -> Response:
         """
         Get artifact failed or passed build log based on job id.
@@ -1194,7 +1209,7 @@ class DatabaseAPI(object):
             try:
                 if not next_json["_items"]:
                     break
-                res = next_json["_items"] # type: list
+                res = next_json["_items"]  # type: list
                 yield res, None
             except KeyError as e:
                 break
