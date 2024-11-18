@@ -23,11 +23,23 @@ def get_relative_path(filename):
     return os.path.join(dir_path, filename)
 
 
-def lora_finetune(*, training_data_filename, model_output_dir):
+def lora_finetune(
+    *,
+    model_output_dir,
+    training_data_absolute_path=None,
+    training_data_relative_path=None
+):
 
-    dataset = load_dataset(
-        "json", data_files=get_relative_path(training_data_filename), split="train"
+    if training_data_relative_path is None and training_data_absolute_path is None:
+        raise ValueError(
+            "Either training_data_relative_path or training_data_absolute_path required"
+        )
+
+    data_files = training_data_absolute_path or get_relative_path(
+        training_data_relative_path
     )
+
+    dataset = load_dataset("json", data_files=data_files, split="train")
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name="unsloth/Llama-3.2-3B-Instruct-bnb-4bit",
@@ -70,7 +82,7 @@ def lora_finetune(*, training_data_filename, model_output_dir):
             per_device_train_batch_size=2,
             gradient_accumulation_steps=4,
             warmup_steps=10,
-            max_steps=1,  # 60,
+            max_steps=60,
             fp16=not is_bfloat16_supported(),
             bf16=is_bfloat16_supported(),
             logging_steps=1,
@@ -88,4 +100,7 @@ def lora_finetune(*, training_data_filename, model_output_dir):
 
 
 if __name__ == "__main__":
-    lora_finetune(training_data_filename="stub.jsonl", model_output_dir="stub")
+    lora_finetune(
+        training_data_absolute_path="/home/dan/stunning-goggles/djs/dataset-conversion/diff_0_training.jsonl",
+        model_output_dir="diff_0",
+    )
