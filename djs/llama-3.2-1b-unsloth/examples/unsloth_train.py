@@ -82,7 +82,7 @@ def lora_finetune(
             per_device_train_batch_size=2,
             gradient_accumulation_steps=4,
             warmup_steps=10,
-            max_steps=60,
+            max_steps=20,  # 60,
             fp16=not is_bfloat16_supported(),
             bf16=is_bfloat16_supported(),
             logging_steps=1,
@@ -101,6 +101,6 @@ def lora_finetune(
 
 if __name__ == "__main__":
     lora_finetune(
-        training_data_absolute_path="/home/dan/stunning-goggles/djs/dataset-conversion/diff_0_training.jsonl",
+        training_data_absolute_path="/home/dan/stunning-goggles/djs/dataset-conversion/diff_0_sliced_training.jsonl",
         model_output_dir="diff_0",
     )
