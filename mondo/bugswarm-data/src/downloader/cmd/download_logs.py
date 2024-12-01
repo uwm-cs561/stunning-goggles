@@ -11,11 +11,11 @@ import downloader.typing.bugswarm as typ_bugswarm
 ARTIFACTS_JSON_PATH = "data/2024-11-17-02-09-45-artifacts.json"
 LOG_DIR = "data/job_logs"
 
-bugswarmapi = DatabaseAPI()
+bugswarmapi = DatabaseAPI("OlDzyq3bGuOFodk3l8PLyM6a0a337asUpITo2LMIj2c")
 
 
 @sleep_and_retry
-@limits(calls=6, period=60)
+@limits(calls=100, period=60)
 def get_log(job_id: int):
     return bugswarmapi.get_build_log_raw_resp(str(job_id), error_if_not_found=False)
 
