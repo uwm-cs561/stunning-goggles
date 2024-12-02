@@ -17,3 +17,6 @@ LOG_CLEANED_DIR = f"{DATA_DIR}/cleaned_job_logs"
 
 LOG_FILTERED_DIR = f"{DATA_DIR}/filtered_job_logs"
 DIFF_HUNK_FILTERED_DIR = f"{DATA_DIR}/diff_hunk_filtered"
+
+# Export
+EXPORT_DIR = f"{DATA_DIR}/exported"

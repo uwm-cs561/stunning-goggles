@@ -27,3 +27,5 @@ clean = "downloader.cmd.clean_data_dir:main"
 clean_logs = "preprocess.cmd.cleaner:main"
 merge = "preprocess.cmd.log_merger:main"
 diff = "preprocess.cmd.run_diff_merged:main"
+
+export = "preprocess.cmd.export_json:main"
