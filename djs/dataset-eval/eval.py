@@ -1,5 +1,6 @@
 from unsloth import FastLanguageModel
 from transformers import TextStreamer
+import evaluate
 import os
 from traintest import get_ans, get_ctx, get_test
 
@@ -71,7 +72,15 @@ def inference(*, file_infos, local_model_name=None, stream_outputs=False):
         yield decoded_outputs
 
 
-if __name__ == "__main__":
+def main():
+    bleu = evaluate.load("bleu")
     test_file_infos = get_test()
-    for output in inference(file_infos=test_file_infos[:2]):
-        print(output)
+    slice_ = slice(2)
+    outputs = list(inference(file_infos=test_file_infos[slice_], stream_outputs=True))
+    references = [get_ans(file_info) for file_info in test_file_infos[slice_]]
+    results = bleu.compute(predictions=outputs, references=references)
+    print(results)
+
+
+if __name__ == "__main__":
+    main()
