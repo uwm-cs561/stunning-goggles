@@ -1,10 +1,5 @@
 from unsloth import FastLanguageModel
-from unsloth import is_bfloat16_supported
-import torch
-from trl import SFTTrainer
-from transformers import TrainingArguments
 from transformers import TextStreamer
-from datasets import load_dataset
 import os
 
 SAVED_WEIGHTS_DIR = "saved_weights"
@@ -31,6 +26,11 @@ alpaca_prompt = """Below is an instruction that describes a task, paired with an
 {}"""
 
 
+def get_relative_path(filename):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    return os.path.join(dir_path, filename)
+
+
 def inference(*, local_model_name=None):
     model_name = (
         os.path.join(SAVED_WEIGHTS_DIR, local_model_name)
@@ -45,16 +45,13 @@ def inference(*, local_model_name=None):
         load_in_4bit=True,
     )
 
-    print(dir(model))
-
-    return
-
     FastLanguageModel.for_inference(model)  # Enable native 2x faster inference
+
     inputs = tokenizer(
         [
             alpaca_prompt.format(
-                "Give the next number of the fibonnaci sequence.",  # instruction
-                "1, 1, 2, 3, 5, 8",  # input
+                "Identify the error in the following log diff.",  # instruction
+                "",  # input
                 "",  # output - leave this blank for generation!
             )
         ],
@@ -85,4 +82,5 @@ def inference(*, local_model_name=None):
 
 
 if __name__ == "__main__":
-    inference(local_model_name="stub")
+    inference(local_model_name="diff_0_sliced")
+    # inference()
