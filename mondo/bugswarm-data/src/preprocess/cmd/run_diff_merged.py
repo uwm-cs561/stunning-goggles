@@ -20,7 +20,6 @@ from consts import (
 
 ONLY_FAILED_DELETION = True
 
-
 class Task:
     id: str  # image tag
     passed_log_id: str
@@ -131,7 +130,7 @@ def compute_diffs(savedir: str, log_dir: str, artifacts_json_path: str):
 
     tasks = load_artifact(artifacts_json_path)
     # DEBUG
-    tasks = {"cbeust-testng-61702916": tasks["cbeust-testng-61702916"]}
+    # tasks = {"cbeust-testng-61702916": tasks["cbeust-testng-61702916"]}
 
     assert len(tasks) > 0, "No tasks loaded"
     success_count = 0

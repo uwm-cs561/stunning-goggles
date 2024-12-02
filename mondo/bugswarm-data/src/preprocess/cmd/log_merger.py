@@ -1,7 +1,7 @@
 import os
 import re
 
-from consts import ARTIFACTS_JSON_PATH, LOG_DIR, LOG_FILTERED_DIR
+from consts import ARTIFACTS_JSON_PATH, LOG_CLEANED_DIR as LOG_DIR, LOG_FILTERED_DIR
 from downloader.cmd.download_logs import load_artifact_job_ids
 
 BLACK_LIST = [
@@ -16,6 +16,16 @@ BLACK_LIST = [
     r"\[new branch\]",
     r"\[new tag\]",
     r"\d+ .?B",
+    r"travis_time",
+    r"travis_fold",
+    r"hostname:",
+    r"startup:",
+    r"Build id:",
+    r"Job id:",
+    r"instance:",
+    r"travis-build version:",
+    r"Using worker:",
+    r"\$ git checkout",
 ]
 merged = f"({'|'.join([e for e in BLACK_LIST])})"
 print(merged)

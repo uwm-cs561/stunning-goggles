@@ -13,6 +13,7 @@ BUGSWARM_TOKEN = "OlDzyq3bGuOFodk3l8PLyM6a0a337asUpITo2LMIj2c"
 BUGSWARM_QPM = 100
 
 # Merger
-MERGED_DIR = f"{DATA_DIR}/merged_job_logs"
+LOG_CLEANED_DIR = f"{DATA_DIR}/cleaned_job_logs"
+
 LOG_FILTERED_DIR = f"{DATA_DIR}/filtered_job_logs"
 DIFF_HUNK_FILTERED_DIR = f"{DATA_DIR}/diff_hunk_filtered"
