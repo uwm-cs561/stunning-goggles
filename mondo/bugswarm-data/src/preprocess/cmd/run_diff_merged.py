@@ -8,14 +8,14 @@ from types import SimpleNamespace
 from difflib import unified_diff
 
 import downloader.typing.bugswarm as typ_bugswarm
-
-ARTIFACTS_JSON_PATH = "data/2024-11-17-02-09-45-artifacts.json"
-LOG_DIR = "data/job_logs"
-DIFF_DIR = "data/task_diff"
-
-PASSED_LOG_NAME = "passed.log"
-FAILED_LOG_NAME = "failed.log"
-DIFF_NO_CTX_NAME = "diff_no_ctx.log"
+from consts import (
+    ARTIFACTS_JSON_PATH,
+    LOG_DIR,
+    DIFF_DIR,
+    PASSED_LOG_NAME,
+    FAILED_LOG_NAME,
+    DIFF_NO_CTX_NAME,
+)
 
 
 class Task:
