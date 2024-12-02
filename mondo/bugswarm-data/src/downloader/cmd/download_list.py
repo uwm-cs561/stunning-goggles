@@ -5,12 +5,14 @@ from typing import Generator
 from downloader.vendor.bugswarm_database_api import DatabaseAPI
 from ratelimit import limits, sleep_and_retry
 
+from consts import BUGSWARM_TOKEN, BUGSWARM_QPM
 
-bugswarmapi = DatabaseAPI()
+
+bugswarmapi = DatabaseAPI(BUGSWARM_TOKEN)
 
 
 @sleep_and_retry
-@limits(calls=6, period=60)
+@limits(calls=BUGSWARM_QPM, period=60)
 def list_artifacts_limited(
     iter: Generator[tuple[list, Exception | None], None, tuple[None, None]]
 ):
@@ -27,7 +29,9 @@ def main():
     print("Start Downloading")
     dir_name = f"data"
     os.makedirs(dir_name, exist_ok=True)
-    out_name = f"{dir_name}/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-artifacts.json"
+    out_name = (
+        f"{dir_name}/{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-artifacts.json"
+    )
 
     with open(out_name, "w") as f:
         all = []

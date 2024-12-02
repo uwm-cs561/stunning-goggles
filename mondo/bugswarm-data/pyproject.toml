@@ -20,5 +20,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 list = "downloader.cmd.download_list:main"
 logs = "downloader.cmd.download_logs:main"
-diff = "downloader.cmd.run_diff:main"
+diff = "preprocess.cmd.run_diff:main"
 clean = "downloader.cmd.clean_data_dir:main"
+merge = "preprocess.cmd.log_merger:main"

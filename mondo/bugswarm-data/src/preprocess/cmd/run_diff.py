@@ -5,7 +5,6 @@ import os
 import shutil
 from typing import Generator
 from types import SimpleNamespace
-from ratelimit import limits, sleep_and_retry
 from difflib import unified_diff
 
 import downloader.typing.bugswarm as typ_bugswarm

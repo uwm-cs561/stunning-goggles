@@ -5,13 +5,12 @@ from typing import Generator
 from types import SimpleNamespace
 from ratelimit import limits, sleep_and_retry
 
+
 from downloader.vendor.bugswarm_database_api import DatabaseAPI
 import downloader.typing.bugswarm as typ_bugswarm
+from consts import BUGSWARM_TOKEN, ARTIFACTS_JSON_PATH, LOG_DIR
 
-ARTIFACTS_JSON_PATH = "data/2024-11-17-02-09-45-artifacts.json"
-LOG_DIR = "data/job_logs"
-
-bugswarmapi = DatabaseAPI("OlDzyq3bGuOFodk3l8PLyM6a0a337asUpITo2LMIj2c")
+bugswarmapi = DatabaseAPI(BUGSWARM_TOKEN)
 
 
 @sleep_and_retry
