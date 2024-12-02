@@ -15,3 +15,4 @@ BUGSWARM_QPM = 100
 # Merger
 MERGED_DIR = f"{DATA_DIR}/merged_job_logs"
 LOG_FILTERED_DIR = f"{DATA_DIR}/filtered_job_logs"
+DIFF_HUNK_FILTERED_DIR = f"{DATA_DIR}/diff_hunk_filtered"

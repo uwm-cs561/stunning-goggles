@@ -1,21 +1,24 @@
 from collections import defaultdict
-from datetime import datetime
 import json
 import os
 import shutil
 from typing import Generator
 from types import SimpleNamespace
 from difflib import unified_diff
+import time
 
 import downloader.typing.bugswarm as typ_bugswarm
 from consts import (
     ARTIFACTS_JSON_PATH,
-    LOG_DIR,
-    DIFF_DIR,
+    LOG_FILTERED_DIR as LOG_DIR,
+    DIFF_HUNK_FILTERED_DIR as DIFF_DIR,
     PASSED_LOG_NAME,
     FAILED_LOG_NAME,
     DIFF_NO_CTX_NAME,
 )
+
+
+ONLY_FAILED_DELETION = True
 
 
 class Task:
@@ -44,7 +47,9 @@ class Task:
         shutil.copyfile(src_passed, passed_path)
         shutil.copyfile(src_failed, failed_path)
 
-        print(f"[{self.id}] Saving diff")
+        print(
+            f"[{self.id}] Saving diff, passed_id: {self.passed_log_id}, failed_id: {self.failed_log_id}"
+        )
 
         passed_lines = []
         with open(passed_path) as f:
@@ -68,8 +73,43 @@ class Task:
                     n=ctx,
                 )
             )
-            with open(diff_path, "w") as f:
-                f.writelines(diff_with_context_lines)
+
+            # include context
+            context_hunks = []
+            # only failed deletion
+            core_hunks = []
+
+            current_context = []
+            current_core_hunk = []
+            for line in diff_with_context_lines:
+                if line.startswith("@@"):
+                    if current_core_hunk:
+                        core_hunks.append(current_core_hunk)
+                        context_hunks.append(current_context)
+                    current_core_hunk = [line]
+                    current_context = [line]
+                elif line.startswith("+++") or line.startswith("---"):
+                    continue
+                elif ONLY_FAILED_DELETION and line.startswith("+"):
+                    continue
+                else:
+                    if line.startswith("-"):
+                        current_context.append(line[1:])
+                        current_core_hunk.append(line[1:])
+                    else:
+                        current_context.append(line)
+
+            if current_core_hunk:
+                core_hunks.append(current_core_hunk)
+                context_hunks.append(current_context)
+
+            for i, hunk in enumerate(core_hunks):
+                hunk_path = os.path.join(cwd, f"hunk_{ctx}_{i}_ans.log")
+                context_path = os.path.join(cwd, f"hunk_{ctx}_{i}_ctx.log")
+                with open(hunk_path, "w") as f:
+                    f.writelines(hunk)
+                with open(context_path, "w") as f:
+                    f.writelines(context_hunks[i])
         return True
 
 
@@ -90,6 +130,8 @@ def compute_diffs(savedir: str, log_dir: str, artifacts_json_path: str):
     os.makedirs(savedir, exist_ok=True)
 
     tasks = load_artifact(artifacts_json_path)
+    # DEBUG
+    tasks = {"cbeust-testng-61702916": tasks["cbeust-testng-61702916"]}
 
     assert len(tasks) > 0, "No tasks loaded"
     success_count = 0
@@ -99,7 +141,7 @@ def compute_diffs(savedir: str, log_dir: str, artifacts_json_path: str):
     for tasks in tasks.values():
         try:
             # TODO: will context window length of diffs affect our results?
-            done = tasks.save_diff(log_dir, savedir, [0, 2, 4, 8])
+            done = tasks.save_diff(log_dir, savedir, [20, 50])
             if done:
                 success_count += 1
             else:
