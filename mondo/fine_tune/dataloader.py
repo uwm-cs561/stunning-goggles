@@ -27,7 +27,7 @@ def get_relative_path(filename):
 
 def apply_template(filename, tokenizer):
     # TODO: align train test split with dan
-    dataset = load_dataset("json", data_files=filename, split="train")
+    dataset = load_dataset("json", data_files=filename, split="train[0:4000]")
     dataset = dataset.rename_column("context", "input")
     dataset = dataset.rename_column("hunk", "output")
     dataset = to_sharegpt(dataset, merged_prompt="{input}")

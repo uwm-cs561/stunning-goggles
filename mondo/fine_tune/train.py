@@ -57,8 +57,11 @@ def lora_finetune(*, training_data_filename, model_output_dir):
         args=TrainingArguments(
             per_device_train_batch_size=2,
             gradient_accumulation_steps=4,
-            warmup_steps=10,
-            max_steps=1,  # 60,
+            warmup_steps=5,
+            num_train_epochs=1,
+            learning_rate=2e-4,
+            weight_decay=0.01,
+            # max_steps=1,  # 60,
             fp16=not is_bfloat16_supported(),
             bf16=is_bfloat16_supported(),
             logging_steps=1,
