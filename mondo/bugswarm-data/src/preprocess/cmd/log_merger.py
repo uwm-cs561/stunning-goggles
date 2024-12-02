@@ -5,13 +5,20 @@ from consts import ARTIFACTS_JSON_PATH, LOG_DIR, LOG_FILTERED_DIR
 from downloader.cmd.download_logs import load_artifact_job_ids
 
 BLACK_LIST = [
-    r"^\033\[[0-9]?K",
-    r"\033\[[0-9]?K$",
-    r"\d+%\s*\(\d+/\d+\)",
-    r"Downloading:",
-    r"Downloaded:",
+    r"^\033\[\d?K",
+    r"\033\[\d?K$",
+    # r"\d+%\s*\(\d+/\d+\)",
+    r"\d+/\d+",
+    r"\d+%",
+    r"Downloading",
+    r"Downloaded",
+    r"\.{8}",
+    r"\[new branch\]",
+    r"\[new tag\]",
+    r"\d+ .?B",
 ]
 merged = f"({'|'.join([e for e in BLACK_LIST])})"
+print(merged)
 REGEX_PROGRESS_LINE = re.compile(merged)
 
 
@@ -21,13 +28,18 @@ def merge_progress_lines(log_content: str):
 
     # no list comprehension for debug
     for line in lines:
-        mat = REGEX_PROGRESS_LINE.findall(line)
-        if mat:
+        striped = line.strip()
+        if len(striped) == 0:
             continue
-        res.append(line)
+        mat = REGEX_PROGRESS_LINE.findall(line)
+        if len(mat) > 0:
+            continue
+        res.append(striped)
     return res
 
+
 LINE_THRESHOLD = 1000
+
 
 def main():
     art_path = os.path.join(os.getcwd(), ARTIFACTS_JSON_PATH)
