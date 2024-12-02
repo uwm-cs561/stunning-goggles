@@ -3,6 +3,8 @@ from transformers import TextStreamer
 import evaluate
 import os
 from traintest import get_ans, get_ctx, get_test
+import json
+from unsloth import torch
 
 SAVED_WEIGHTS_DIR = "saved_weights"
 max_seq_length = 2048  # Supports RoPE Scaling interally, so choose any!
@@ -43,44 +45,70 @@ def inference(*, file_infos, local_model_name=None, stream_outputs=False):
 
     for file_info in file_infos:
         ctx = get_ctx(file_info)
+        input_chars = prompt_template.format(
+            ctx,  # input
+            "",  # output - leave this blank unless we want to start it off with something
+        )
+
         inputs = tokenizer(
-            [
-                prompt_template.format(
-                    ctx,  # input
-                    "",  # output - leave this blank unless we want to start it off with something
-                )
-            ],
+            [input_chars],
             return_tensors="pt",
         ).to("cuda")
 
-        n_input_tokens = len(inputs[0])
-
-        if stream_outputs and len(file_infos) < 10:
+        if stream_outputs and len(file_infos) < 5:
             text_streamer = TextStreamer(tokenizer)
         else:
             text_streamer = None
 
-        outputs = model.generate(
-            **inputs,
-            streamer=text_streamer,
-            max_new_tokens=1024,
-            # use_cache=True
-        )
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                streamer=text_streamer,
+                max_new_tokens=1024,
+                # use_cache=True
+            )
 
         (decoded_outputs,) = tokenizer.batch_decode(outputs)
 
-        yield decoded_outputs
+        print(torch.cuda.memory_summary(abbreviated=True))
+
+        # free up GPU memory
+        del inputs
+        del outputs
+        torch.cuda.empty_cache()
+
+        print(torch.cuda.memory_summary(abbreviated=True))
+
+        # why +13? Not sure, but somehow the character counts get off by 13
+        yield decoded_outputs[len(input_chars) + 13 :]
 
 
 def main():
-    bleu = evaluate.load("bleu")
     test_file_infos = get_test()
-    slice_ = slice(2)
+    test_begin_index, test_end_index = 4, 12
+    slice_ = slice(test_begin_index, test_end_index)
     outputs = list(inference(file_infos=test_file_infos[slice_], stream_outputs=True))
     references = [get_ans(file_info) for file_info in test_file_infos[slice_]]
+
+    bleu = evaluate.load("bleu")
     results = bleu.compute(predictions=outputs, references=references)
     print(results)
+    with open(
+        get_relative_path(f"results-{test_begin_index}-{test_end_index}.json"), "w"
+    ) as f:
+        json.dump(
+            results,
+            f,
+            indent=2,
+        )
 
 
 if __name__ == "__main__":
     main()
+    # for file_info in get_test()[2:4]:
+    #     print("<>BEG<>")
+    #     print(get_ctx(file_info))
+    #     print("<>MID<>")
+    #     print(get_ans(file_info))
+    #     print("<>END<>")
+    #     print()
