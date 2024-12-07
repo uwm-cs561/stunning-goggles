@@ -142,25 +142,26 @@ We will evaluate our models' performance using a BLEU score comparing the models
   
     taskgroup(title: [*Research*], {
       task([Select Codebase #sym.checkmark], (0, 1), style: (stroke: 2pt + gray))
-      task([Literature Review #sym.checkmark], (2, 4), style: (stroke: 2pt + gray))
+      task([Literature Review #sym.checkmark], (1, 3), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Dataset Development*], {
       task([Diff for existing database #sym.checkmark], (3, 5), style: (stroke: 2pt + gray))
-      task([Golden label data collection #sym.circle.dotted], (5, 7), style: (stroke: 2pt + gray))
+      task([Label-efficient method #sym.circle.dotted], (5, 6), style: (stroke: 2pt + gray))
+      task([Golden label data collection #sym.circle.dotted], (6, 7), style: (stroke: 2pt + gray))
     })
     taskgroup(title: [*Model Fine-Tuning*], {
-      task([Write fine-tuning code #sym.checkmark], (4, 5), style: (stroke: 2pt + gray))
-      task([Fine-tune the model #sym.circle.dotted], (5, 6), style: (stroke: 2pt + gray))
+      task([Write fine-tuning code #sym.checkmark], (5, 6), style: (stroke: 2pt + gray))
+      task([Fine-tune the model #sym.circle.dotted], (6, 7), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Running Experiments*], {
       task([Write experiment code #sym.circle.dotted], (5, 7), style: (stroke: 2pt + gray))
-      task("Execute experiments", (6, 8), style: (stroke: 2pt + gray))
+      task("Execute experiments", (7, 9), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Analyzing Results & Writing Final Report*], {
-      task("Analyze Results", (8, 9), style: (stroke: 2pt + gray))
+      task("Analyze Results", (8.5, 9), style: (stroke: 2pt + gray))
       task("Write final report", (9, 9.5), style: (stroke: 2pt + gray))
     })
 
