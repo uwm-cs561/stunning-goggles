@@ -15,10 +15,16 @@
 
 
 #show: neurips2024.with(
-  title: [DevOops: Speeding Up Debugging from Logs],
+  title: [
+    DevOops: Speeding Up Debugging from Logs\
+    #text(size: 0.8em, weight: "light")[Midterm Report]
+  ],
+
   authors: (authors, affls),
   keywords: ("Machine Learning"),
-  abstract: none,
+  abstract: [
+    #lorem(20)
+  ],
   bibliography: bibliography("main.bib"),
   bibliography-opts: (title: none, full: true),  // Only for example paper.
   appendix: [ ],
@@ -86,21 +92,24 @@ In summary, our proposal is different from prior work in that it brings together
 // nice!
 // :)
 
-= Method
-// (do not have to include every detail.)
+= Method and Progress
+// Details of concrete methods you have tested so far. One should be able to replicate your results based on the details include in the paper.
+// Your experiments and results so far. Explain the setups (models, baselines, metrics, etc.)
 
-== Data
-In order to reflect the use case of fine-tuning a language model on a single specific codebase to provide specialized insights, we will select a single open-source project and confine ourselves to only logs generated from it. We have tentatively selected the lodash project, because both authors are familiar with the programming language (JavaScript) and it already has a CI/CD pipeline enabled in GitHub Actions, which can be easily forked and triggered.
+== Data Collection
+#show "Habitica": [Habitica@link-habitica]
 
-We will generate a synthetic dataset by forking the project, then creating multiple isolated branches where we intentionally introduce errors into the code. We might also reproduce bugs that were fixed by previous commits to enhance data diversity. The logs from the resulting pipeline executions will then be a set of unlabeled data.
+/ Golden Labels: In order to reflect the use case of fine-tuning a language model on a single specific codebase to provide specialized insights, we will select a single open-source project and confine ourselves to only logs generated from it. We have tentatively selected the lodash project, because both authors are familiar with the programming language (JavaScript) and it already has a CI/CD pipeline enabled in GitHub Actions, which can be easily forked and triggered.
+  / Progress: We have selected Habitica as the main repository we'll be working on. We are still working on scraping data from its failed GitHub actions. Our current plan is to manually label those logs after adopting some label-efficient methods into our pipeline.
+  / Plan: We recently found out that GitHub has released a similar alpha-stage feature called "Explain Errors in Logs," which performs tasks similar to our proposal. However, it focuses more on summarizing the logs and sometimes generates a strong illusion by providing completely wrong answers, as it doesn't give an explicit answer to where the error occurred within the build log. We will still try to compare our results with this feature or use its output as hints in our training process.
 
-In order to label the data,  we need to determine which part of the logs contains the error. As will be discussed later, we hope to incorporate label-efficient methods in order to produce fewer labels.
+/ Synthetic Dataset: We will generate a synthetic dataset by forking the project, then creating multiple isolated branches where we intentionally introduce errors into the code. We might also reproduce bugs that were fixed by previous commits to enhance data diversity. The logs from the resulting pipeline executions will then be a set of unlabeled data.
+  / Plan: We have temporarily postponed this step to later stages of our project. Since Habitica already has plenty of failed jobs, the data from synthetic bugs are less practical compared to the bugs we obtain from the real history of builds.
 
-We will also be able to generate a set of data usable for weak supervision by diffing the new logs from the broken code with the old logs from successful pipeline runs. We believe lines that are added in the diff will be significantly more likely to contain relevant errors.
 
-Additionally, we can generate additional (silver) labels for our dataset by feeding the unlabeled examples into existing commercial LLMs such as ChatGPT.
-
-Finally, we may incorporate existing datasets into our process, such as the one compiled in @Beller2017 or @Tomassi2019. One technique we could use is to fine-tune our model in two stages: first, using existing datasets drawn from many projects in order to focus the model towards understanding pipeline logs, and then using our single-repository dataset to specialize the model for that project specifically.
+/ Diff between Failed and Passed Builds: We will also be able to generate a set of data usable for weak supervision by diffing the new logs from the broken code with the old logs from successful pipeline runs. We believe lines that are added in the diff will be significantly more likely to contain relevant errors.
+  / Progress: We managed to download all reproducible tasks from BugSwarm (Tomassi et al., 2019) and all corresponding raw build logs of passed and failed jobs for each task. We also generated diffs with different context window sizes, which will affect how many non-changed lines above or below a changed line should be included in the patch. We are using 0, 2, 4, and 8 for our current experiments.
+  / Plan: We might also adopt another existing database from Beller et al. (2017). We'll continue using these large-scale databases in the first stage of training to focus the model on understanding pipeline logs. After examining the raw logs and diffs, we found that there is a considerable amount of noise in the raw logs, such as progress indicators and temporary/random file name changes. We plan to generate a new set of training data by filtering out this noise using different methods.
 
 == Experiments
 // Your planned experiment setups and/or theoretical arguments.
