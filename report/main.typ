@@ -24,7 +24,7 @@
   keywords: ("Machine Learning", "DevOps", "CI/CD", "LLM", "Fine Tune"),
   abstract: [
   // I GPTed this, make changes as much as you want! Worth to note this doesn't include any results from our expr so far :p
-    In the modern software development landscape, complex tech stacks and automated CI/CD pipelines present unique challenges in error identification and debugging. This report explores the potential of leveraging large language models to interpret log streams and assist in debugging, addressing the inefficiencies of current manual methods. We propose a fully-local, fine-tuned language model to identify errors within log texts, preserving proprietary information and providing context-specific insights. Our approach differs from existing work by combining the strengths of pre-trained LLMs with label-efficient training techniques tailored for build logs. The project's methodology includes data collection from a selected open-source project, the creation of synthetic datasets, and the generation of data from diffs between failed and passed builds. Our experiments will compare a fine-tuned model against a base pre-trained model using zero-shot and few-shot methodologies. This project aims to enhance the speed and accuracy of debugging from logs, ultimately improving software development efficiency.
+    In the modern software development landscape, complex tech stacks and automated CI/CD pipelines present unique challenges in error identification and debugging. We explore the potential of leveraging large language models to interpret log streams and assist in debugging, addressing the inefficiencies of current manual methods. We propose a fully-local, fine-tuned language model to identify errors within log texts, preserving proprietary information and providing context-specific insights. We utilize data from the open-source BugSwarm dataset to fine-tune a Llama-3.2 3B model using LoRA. We will show whether the model performs better after fine-tuning by comparing results against a test set of gold-labeled samples, produced by us.
   ],
   bibliography: bibliography("main.bib"),
   bibliography-opts: (title: none, full: true),  // Only for example paper.
@@ -32,16 +32,6 @@
   accepted: none,
 )
 
-// plan:
-// - Mondo
-// - get bugswarm list of ids for logs - passing and failing
-// - download the logs
-// - diff each corresponding passing and failing log
-//
-// - Daniel
-// - fine-tuning llama model
-// - confirm prompt for our task
-// - base performance test for the finetune one and the basic one.
 
 // alternative:
 // - don't forget to apply a token for bugswarm! (actually not that important for now :p)
@@ -55,12 +45,7 @@
 // What are the planned methods and experiments for the rest of the semester?
 // Proposed timeline. How are you doing based on the initial timeline you had? Propose adjustments to the planned timeline for the rest of the semester.a
 
-
-
 #set cite(form: "prose")
-
-// Presetation: https://docs.google.com/presentation/d/1j3bSC3jhN_a_Eoe37qeLdfcxwJtxSjugVd_0CeZKNn4/edit#slide=id.p
-// Submission: https://canvas.wisc.edu/courses/427899/assignments/2468896
 
 = Introduction
 // The problem you are solving and its importance.
@@ -88,44 +73,66 @@ Many approaches have been proposed for various code-related tasks. @Sun2024 prov
 
 Finally, @10017337 applied NLP methods to log summarization and introduced the first gold-standard dataset for this task. However, their approach is not label-efficient and does not leverage the vast knowledge encoded in pretrained LLMs. We will focus on summarizing core error logs and aim to propose a more label-efficient method for generating ground truth.
 
-In summary, our proposal is different from prior work in that it brings together the power of pre-trained LLMs and label-efficient training techniques on code-related tasks with the domain of build logs, a combination which has not been explored before to our knowledge.
-
-// nice!
-// :)
+In summary, our work is different from prior work in that it brings together the power of pre-trained LLMs and label-efficient training techniques on code-related tasks with the domain of build logs, a combination which has not been explored before to our knowledge.
 
 = Method and Progress
 // Details of concrete methods you have tested so far. One should be able to replicate your results based on the details include in the paper.
 
+Our main progress so far has been in preparing the technical environment and collecting data. We have elected to use the unsloth python library in order to fine-tune using a Low-Rank Adaptation (LoRA) method (@hu2021loralowrankadaptationlarge). We are using unsloth's version of the Llama-3.2 3B Instruct model, from huggingface as unsloth/Llama-3.2-3B-Instruct-bnb-4bit.
+
+We have set up a training environment in a docker container based on Ubuntu 24.04 image on Mondo's personal computer, using an NVIDIA GeForce RTX 3070 Ti with 8GB memory. An excerpt of our fine-tuning code is in Appendix A.
+
+What is not shown in the excerpt is the details of the dataset being loaded. This is still in-progress, and in fact we have multiple datasets we are still working on processing into a useful form.
+
 == Data Collection
 #show "Habitica": [Habitica@link-habitica]
 
-/ Golden Labels: In order to reflect the use case of fine-tuning a language model on a single specific codebase to provide specialized insights, we will select a single open-source project and confine ourselves to only logs generated from it. We have tentatively selected the lodash project, because both authors are familiar with the programming language (JavaScript) and it already has a CI/CD pipeline enabled in GitHub Actions, which can be easily forked and triggered.
-  / Progress: We have selected Habitica as the main repository we'll be working on. We are still working on scraping data from its failed GitHub actions. Our current plan is to manually label those logs after adopting some label-efficient methods into our pipeline.
-  / Plan: We recently found out that GitHub has released a similar alpha-stage feature called "Explain Errors in Logs," which performs tasks similar to our proposal. However, it focuses more on summarizing the logs and sometimes generates a strong illusion by providing completely wrong answers, as it doesn't give an explicit answer to where the error occurred within the build log. We will still try to compare our results with this feature or use its output as hints in our training process.
+=== Dataset 1 - BugSwarm
+In order to test the extent to which generic exposure to DevOps pipeline runs can elicit latent capabilities of the Llama model, we are working on incorporating training using this large and more diverse dataset, BugSwarm (@Tomassi2019). The dataset itself contains raw logs from paired failing and successful runs. We have generated a derived dataset using a diffing program to extract the differences in the log between the successful and failed runs. We believe lines that are added in the diff will be significantly more likely to contain relevant errors.
 
-/ Synthetic Dataset: We will generate a synthetic dataset by forking the project, then creating multiple isolated branches where we intentionally introduce errors into the code. We might also reproduce bugs that were fixed by previous commits to enhance data diversity. The logs from the resulting pipeline executions will then be a set of unlabeled data.
-  / Plan: We have temporarily postponed this step to later stages of our project. Since Habitica already has plenty of failed jobs, the data from synthetic bugs are less practical compared to the bugs we obtain from the real history of builds.
+We managed to download around 4478 reproducible tasks and around 1965 paired raw build logs of passed and failed jobs for the tasks. We also generated diffs with different context window sizes, which will affect how many non-changed lines above or below a changed line are included in the diff output. We are using 0, 2, 4, and 8 as the context window sizes for our current experiments.
 
+We might also adopt another existing database (@Beller2017). We'll continue using these large-scale databases in the first stage of training to focus the model on understanding pipeline logs. After examining the raw logs and diffs, we found that there is a considerable amount of noise in the raw logs, such as progress indicators and temporary/random file name changes. We plan to generate a new set of training data by filtering out this noise using different methods. We will most likely be applying some diversity-based filtering here, following from a number of papers we've read in this class that all emphasize the importance of dataset diversity.
 
-/ Diff between Failed and Passed Builds: We will also be able to generate a set of data usable for weak supervision by diffing the new logs from the broken code with the old logs from successful pipeline runs. We believe lines that are added in the diff will be significantly more likely to contain relevant errors.
-  / Progress: We managed to download around 4478 reproducible tasks from BugSwarm (Tomassi et al., 2019) and around 1965 paired raw build logs of passed and failed jobs for the tasks. We also generated diffs with different context window sizes, which will affect how many non-changed lines above or below a changed line should be included in the patch. We are using 0, 2, 4, and 8 for our current experiments.
-  / Plan: We might also adopt another existing database from Beller et al. (2017). We'll continue using these large-scale databases in the first stage of training to focus the model on understanding pipeline logs. After examining the raw logs and diffs, we found that there is a considerable amount of noise in the raw logs, such as progress indicators and temporary/random file name changes. We plan to generate a new set of training data by filtering out this noise using different methods.
+=== Dataset 2 - Single-repo, gold-labeled
+In order to reflect the use case of fine-tuning a language model on a single specific codebase to provide specialized insights, we have selected a single open-source project and we will construct a dataset from logs generated exclusively from it. We have selected Habitica as the project, because both authors are familiar with the programming language (JavaScript) and it already has a CI/CD pipeline enabled in GitHub Actions, which can be easily forked and triggered. We are still working on scraping data from its failed GitHub actions. Our current plan is to manually label those logs after adopting some label-efficient methods into our pipeline.
 
+We recently found out that GitHub has released a similar alpha-stage feature called "Explain Errors in Logs," which performs tasks similar to our proposal. However, it focuses more on summarizing the logs and sometimes generates a strong illusion by providing completely wrong answers, as it doesn't give an explicit answer to where the error occurred within the build log. We will still try to compare our results with this feature or use its output as hints in our training process.
+
+=== Dataset 3 - Synthetically-generated
+Our original plan was to generate a synthetic dataset by forking our selected open-source project, then creating multiple isolated branches where we intentionally introduced errors into the code. We have postponed this step, likely leaving it out of scope for the project in this class (with a possibility for future work). Since Habitica already has plenty of failed jobs, the data from synthetic bugs are less practical compared to the bugs we obtain from the real history of builds.
 
 == Experiments
 // Details of concrete methods you have tested so far. One should be able to replicate your results based on the details include in the paper.
 
-Our primary experiment will be comparing a fine-tuned model with the base pretrained model. We will use both zero-shot and few-shot methodologies. We will develop a template prompt, such as "In the following logs, quote the part that is the error:" and concatenate the logs. We will save model weight checkpoints in order to compare the performance as we increase the number of fine-tuning iterations.
+Our primary experimental methodology will be comparing models using a zero-shot prompt, because this better matches the expected final use case of a tool like this (though it is possible a few-shot model could be implemented in a way that is opaque to the user by hiding it within a system prompt). 
 
-We may perform additional ablation experiments as time permits and depending on what looks promising.
+Our current template prompt is:
+
+```python
+template = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+
+### Instruction:
+You are an expert DevOps engineer. Identify the lines from the below error logs that are responsible for the failure of the pipeline.
+
+### Input:
+{}
+
+### Response:
+{}"""
+```
+
+We will conduct experiments comparing a variety of fine-tuning levels, and with the fine-tuning being based on the different datasets, as mentioned above. The different levels of fine-tuning will be achieved by saving training checkpoints, so that we can load in the model for inference from a variety of points along its fine-tuning progression.
 
 == Results
 // Your experiments and results so far. Explain the setups (models, baselines, metrics, etc.)
 
-We will evaluate our models' performance using a BLEU score comparing the models' output with the gold label.
+We do not yet have any results to report. The original plan was to evaluate our models' performance using a BLEU score comparing the models' output with the gold label. We are exploring the use of the GitHub feature "Explain Errors in Logs" as a comparison point, as mentioned above.
+
+Our results analysis for models fine-tuned on the diverse dataset from BugSwarm will still be evaluated on the gold labels derived from Habitica. We have seen some results in the papers studied in this class and others which suggest that dataset diversity may be more useful than developing "narrow expertise" in a very specific subset of data.
 
 = Timeline
-// (detail progress of each week).
+We are behind our original planned timeline. This is primarily due to the busy middle-of-semester period resulting in the deferral of work on this project. An adjusted timeline is presented below. Columns reflect weeks beginning on a Monday with the listed date.
 
 
 #timeliney.timeline(
@@ -133,11 +140,11 @@ We will evaluate our models' performance using a BLEU score comparing the models
   {
     import timeliney: *
       
-    headerline(group(([*Oct*], 3)), group(([*Nov*], 4)), group(([*Dec*], 3)))
+    headerline(group(([*Oct*], 3)), group(([*Nov*], 4)), group(([*Dec*], 2)))
     headerline(
       group(strong("14"), strong("21"), strong("28")),
       group(strong("4"), strong("11"), strong("18"), strong("25")),
-      group(strong("2"), strong("9"), strong("16"))
+      group(strong("2"), strong("9"))
     )
   
     taskgroup(title: [*Research*], {
@@ -147,26 +154,26 @@ We will evaluate our models' performance using a BLEU score comparing the models
 
     taskgroup(title: [*Dataset Development*], {
       task([Diff for existing database #sym.checkmark], (3, 5), style: (stroke: 2pt + gray))
-      task([Label-efficient method #sym.circle.dotted], (5, 6), style: (stroke: 2pt + gray))
-      task([Golden label data collection #sym.circle.dotted], (6, 7), style: (stroke: 2pt + gray))
+      task([Gold label collection #sym.circle.dotted], (6, 7), style: (stroke: 2pt + gray))
     })
     taskgroup(title: [*Model Fine-Tuning*], {
-      task([Write fine-tuning code #sym.checkmark], (5, 6), style: (stroke: 2pt + gray))
-      task([Fine-tune the model #sym.circle.dotted], (6, 7), style: (stroke: 2pt + gray))
+      task([Write fine-tuning code #sym.checkmark], (4, 5), style: (stroke: 2pt + gray))
+      task([Data selection method #sym.circle.dotted], (5, 6), style: (stroke: 2pt + gray))
+      task([Fine-tune the model #sym.circle.dotted], (5, 7), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Running Experiments*], {
       task([Write experiment code #sym.circle.dotted], (5, 7), style: (stroke: 2pt + gray))
-      task("Execute experiments", (7, 9), style: (stroke: 2pt + gray))
+      task("Execute experiments", (6, 8.5), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Analyzing Results & Writing Final Report*], {
-      task("Analyze Results", (8.5, 9), style: (stroke: 2pt + gray))
-      task("Write final report", (9, 9.5), style: (stroke: 2pt + gray))
+      task("Analyze Results", (7, 8.5), style: (stroke: 2pt + gray))
+      task("Write final report", (8, 9), style: (stroke: 2pt + gray))
     })
 
     milestone(
-      at: 5.5,
+      at: 5,
       style: (stroke: (dash: "dashed")),
       align(center, [
         *Mid Report Due*\
@@ -174,7 +181,7 @@ We will evaluate our models' performance using a BLEU score comparing the models
       ])
     )
     milestone(
-      at: 9.5,
+      at: 9,
       style: (stroke: (dash: "dashed")),
       align(center, [
         *Final Report Due*\
@@ -183,5 +190,65 @@ We will evaluate our models' performance using a BLEU score comparing the models
     )
   }
 )
+
+= Appendix
+
+== A: Training Code Excerpt
+
+```python
+    dataset = load_dataset("json", data_files=data_files, split="train")
+
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name="unsloth/Llama-3.2-3B-Instruct-bnb-4bit",
+        max_seq_length=max_seq_length,
+        dtype=None,
+        load_in_4bit=True,
+    )
+
+    model = FastLanguageModel.get_peft_model(
+        model,
+        r=16,
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+        lora_alpha=16,
+        lora_dropout=0,  
+        bias="none", 
+        
+        use_gradient_checkpointing="unsloth",
+        random_state=3407,
+        max_seq_length=max_seq_length,
+        use_rslora=False,  
+        loftq_config=None, 
+    )
+
+    trainer = SFTTrainer(
+        model=model,
+        train_dataset=dataset,
+        dataset_text_field="text",
+        max_seq_length=max_seq_length,
+        tokenizer=tokenizer,
+        args=TrainingArguments(
+            per_device_train_batch_size=2,
+            gradient_accumulation_steps=4,
+            warmup_steps=10,
+            max_steps=60,
+            fp16=not is_bfloat16_supported(),
+            bf16=is_bfloat16_supported(),
+            logging_steps=1,
+            output_dir="outputs",
+            optim="adamw_8bit",
+            seed=3407,
+        ),
+    )
+
+    trainer.train()
+```
 
 = References
