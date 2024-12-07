@@ -21,7 +21,7 @@
   ],
 
   authors: (authors, affls),
-  keywords: ("Machine Learning"),
+  keywords: ("Machine Learning", "DevOps", "CI/CD", "LLM", "Fine Tune"),
   abstract: [
   // I GPTed this, make changes as much as you want! Worth to note this doesn't include any results from our expr so far :p
     In the modern software development landscape, complex tech stacks and automated CI/CD pipelines present unique challenges in error identification and debugging. This report explores the potential of leveraging large language models to interpret log streams and assist in debugging, addressing the inefficiencies of current manual methods. We propose a fully-local, fine-tuned language model to identify errors within log texts, preserving proprietary information and providing context-specific insights. Our approach differs from existing work by combining the strengths of pre-trained LLMs with label-efficient training techniques tailored for build logs. The project's methodology includes data collection from a selected open-source project, the creation of synthetic datasets, and the generation of data from diffs between failed and passed builds. Our experiments will compare a fine-tuned model against a base pre-trained model using zero-shot and few-shot methodologies. This project aims to enhance the speed and accuracy of debugging from logs, ultimately improving software development efficiency.
@@ -40,11 +40,11 @@
 //
 // - Daniel
 // - fine-tuning llama model
-// - don't forget to apply a token for bugswarm!
 // - confirm prompt for our task
 // - base performance test for the finetune one and the basic one.
 
 // alternative:
+// - don't forget to apply a token for bugswarm! (actually not that important for now :p)
 // - golden labels from habitate
 
 // Requirement:
@@ -95,7 +95,6 @@ In summary, our proposal is different from prior work in that it brings together
 
 = Method and Progress
 // Details of concrete methods you have tested so far. One should be able to replicate your results based on the details include in the paper.
-// Your experiments and results so far. Explain the setups (models, baselines, metrics, etc.)
 
 == Data Collection
 #show "Habitica": [Habitica@link-habitica]
@@ -109,23 +108,19 @@ In summary, our proposal is different from prior work in that it brings together
 
 
 / Diff between Failed and Passed Builds: We will also be able to generate a set of data usable for weak supervision by diffing the new logs from the broken code with the old logs from successful pipeline runs. We believe lines that are added in the diff will be significantly more likely to contain relevant errors.
-  / Progress: We managed to download all reproducible tasks from BugSwarm (Tomassi et al., 2019) and all corresponding raw build logs of passed and failed jobs for each task. We also generated diffs with different context window sizes, which will affect how many non-changed lines above or below a changed line should be included in the patch. We are using 0, 2, 4, and 8 for our current experiments.
+  / Progress: We managed to download around 4478 reproducible tasks from BugSwarm (Tomassi et al., 2019) and around 1965 paired raw build logs of passed and failed jobs for the tasks. We also generated diffs with different context window sizes, which will affect how many non-changed lines above or below a changed line should be included in the patch. We are using 0, 2, 4, and 8 for our current experiments.
   / Plan: We might also adopt another existing database from Beller et al. (2017). We'll continue using these large-scale databases in the first stage of training to focus the model on understanding pipeline logs. After examining the raw logs and diffs, we found that there is a considerable amount of noise in the raw logs, such as progress indicators and temporary/random file name changes. We plan to generate a new set of training data by filtering out this noise using different methods.
 
+
 == Experiments
-// Your planned experiment setups and/or theoretical arguments.
+// Details of concrete methods you have tested so far. One should be able to replicate your results based on the details include in the paper.
 
 Our primary experiment will be comparing a fine-tuned model with the base pretrained model. We will use both zero-shot and few-shot methodologies. We will develop a template prompt, such as "In the following logs, quote the part that is the error:" and concatenate the logs. We will save model weight checkpoints in order to compare the performance as we increase the number of fine-tuning iterations.
 
 We may perform additional ablation experiments as time permits and depending on what looks promising.
 
 == Results
-// Metric you would use to evaluate your method.
-
-// - line-number approximation coverage // can we do multi output?
-// IMO we don't want to mess with this ^
-// lol just act as a reference
-// I think we have a highly chance to change this after we finish reading...
+// Your experiments and results so far. Explain the setups (models, baselines, metrics, etc.)
 
 We will evaluate our models' performance using a BLEU score comparing the models' output with the gold label.
 
