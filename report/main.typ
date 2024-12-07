@@ -23,11 +23,12 @@
   authors: (authors, affls),
   keywords: ("Machine Learning"),
   abstract: [
-    #lorem(20)
+  // I GPTed this, make changes as much as you want! Worth to note this doesn't include any results from our expr so far :p
+    In the modern software development landscape, complex tech stacks and automated CI/CD pipelines present unique challenges in error identification and debugging. This report explores the potential of leveraging large language models to interpret log streams and assist in debugging, addressing the inefficiencies of current manual methods. We propose a fully-local, fine-tuned language model to identify errors within log texts, preserving proprietary information and providing context-specific insights. Our approach differs from existing work by combining the strengths of pre-trained LLMs with label-efficient training techniques tailored for build logs. The project's methodology includes data collection from a selected open-source project, the creation of synthetic datasets, and the generation of data from diffs between failed and passed builds. Our experiments will compare a fine-tuned model against a base pre-trained model using zero-shot and few-shot methodologies. This project aims to enhance the speed and accuracy of debugging from logs, ultimately improving software development efficiency.
   ],
   bibliography: bibliography("main.bib"),
   bibliography-opts: (title: none, full: true),  // Only for example paper.
-  appendix: [ ],
+  appendix: [],
   accepted: none,
 )
 
@@ -137,44 +138,51 @@ We will evaluate our models' performance using a BLEU score comparing the models
   {
     import timeliney: *
       
-    headerline(group(([*Oct*], 3)), group(([*Nov*], 4)), group(([*Dec*], 2)))
+    headerline(group(([*Oct*], 3)), group(([*Nov*], 4)), group(([*Dec*], 3)))
     headerline(
       group(strong("14"), strong("21"), strong("28")),
       group(strong("4"), strong("11"), strong("18"), strong("25")),
-      group(strong("2"), strong("9"))
+      group(strong("2"), strong("9"), strong("16"))
     )
   
     taskgroup(title: [*Research*], {
-      task("Select Codebase", (0, 1), style: (stroke: 2pt + gray))
-      task("Literature Review", (0, 2), style: (stroke: 2pt + gray))
+      task([Select Codebase #sym.checkmark], (0, 1), style: (stroke: 2pt + gray))
+      task([Literature Review #sym.checkmark], (2, 4), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Dataset Development*], {
-      task("Develop log generation process", (1, 3), style: (stroke: 2pt + gray))
-      task("Generate logs", (2, 3), style: (stroke: 2pt + gray))
-      task("Clean & label data", (2, 4), style: (stroke: 2pt + gray))
+      task([Diff for existing database #sym.checkmark], (3, 5), style: (stroke: 2pt + gray))
+      task([Golden label data collection #sym.circle.dotted], (5, 7), style: (stroke: 2pt + gray))
     })
     taskgroup(title: [*Model Fine-Tuning*], {
-      task("Write fine-tuning code", (3, 4), style: (stroke: 2pt + gray))
-      task("Fine-tune the model", (3, 5), style: (stroke: 2pt + gray))
+      task([Write fine-tuning code #sym.checkmark], (4, 5), style: (stroke: 2pt + gray))
+      task([Fine-tune the model #sym.circle.dotted], (5, 6), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Running Experiments*], {
-      task("Write experiment code", (4, 6), style: (stroke: 2pt + gray))
-      task("Execute experiments", (5, 7), style: (stroke: 2pt + gray))
+      task([Write experiment code #sym.circle.dotted], (5, 7), style: (stroke: 2pt + gray))
+      task("Execute experiments", (6, 8), style: (stroke: 2pt + gray))
     })
 
     taskgroup(title: [*Analyzing Results & Writing Final Report*], {
-      task("Analyze Results", (6, 8), style: (stroke: 2pt + gray))
-      task("Write final report", (7, 8.5), style: (stroke: 2pt + gray))
+      task("Analyze Results", (8, 9), style: (stroke: 2pt + gray))
+      task("Write final report", (9, 9.5), style: (stroke: 2pt + gray))
     })
 
     milestone(
-      at: 8.5,
+      at: 5.5,
       style: (stroke: (dash: "dashed")),
       align(center, [
-        *Last Class*\
-        Dec 11
+        *Mid Report Due*\
+        Nov 17
+      ])
+    )
+    milestone(
+      at: 9.5,
+      style: (stroke: (dash: "dashed")),
+      align(center, [
+        *Final Report Due*\
+        Dec 15
       ])
     )
   }
