@@ -2,7 +2,7 @@ from unsloth import FastLanguageModel
 from transformers import TextStreamer
 import evaluate
 import os
-from traintest import get_ans, get_ctx, get_test
+from load_zip import get_ans, get_ctx, get_test
 import json
 from unsloth import torch
 
