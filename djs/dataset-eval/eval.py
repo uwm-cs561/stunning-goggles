@@ -1,10 +1,15 @@
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 from unsloth import FastLanguageModel
 from transformers import TextStreamer
 import evaluate
-import os
 from load_zip import get_ans, get_ctx, get_test
 import json
 from unsloth import torch
+from datetime import datetime, timezone
+from itertools import islice
 
 SAVED_WEIGHTS_DIR = "saved_weights"
 max_seq_length = 2048  # Supports RoPE Scaling interally, so choose any!
@@ -44,57 +49,85 @@ def inference(*, file_infos, local_model_name=None, stream_outputs=False):
     FastLanguageModel.for_inference(model)  # Enable native 2x faster inference
 
     for file_info in file_infos:
-        ctx = get_ctx(file_info)
-        input_chars = prompt_template.format(
-            ctx,  # input
-            "",  # output - leave this blank unless we want to start it off with something
-        )
-
-        inputs = tokenizer(
-            [input_chars],
-            return_tensors="pt",
-        ).to("cuda")
-
-        if stream_outputs and len(file_infos) < 5:
-            text_streamer = TextStreamer(tokenizer)
-        else:
-            text_streamer = None
-
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                streamer=text_streamer,
-                max_new_tokens=1024,
-                # use_cache=True
+        inputs = None
+        outputs = None
+        try:
+            ctx = get_ctx(file_info)
+            input_chars = prompt_template.format(
+                ctx,  # input
+                "",  # output - leave this blank unless we want to start it off with something
             )
 
-        (decoded_outputs,) = tokenizer.batch_decode(outputs)
+            inputs = tokenizer(
+                [input_chars],
+                return_tensors="pt",
+            ).to("cuda")
 
-        print(torch.cuda.memory_summary(abbreviated=True))
+            if stream_outputs and len(file_infos) < 5:
+                text_streamer = TextStreamer(tokenizer)
+            else:
+                text_streamer = None
 
-        # free up GPU memory
-        del inputs
-        del outputs
-        torch.cuda.empty_cache()
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    streamer=text_streamer,
+                    max_new_tokens=1024,
+                    # use_cache=True
+                )
 
-        print(torch.cuda.memory_summary(abbreviated=True))
+            (decoded_outputs,) = tokenizer.batch_decode(outputs)
 
-        # why +13? Not sure, but somehow the character counts get off by 13
-        yield decoded_outputs[len(input_chars) + 13 :]
+            # why +13? Not sure, but somehow the character counts get off by 13
+            yield decoded_outputs[len(input_chars) + 13 :]
+        except Exception as e:
+            yield e
+        finally:
+            # free up GPU memory
+            del inputs
+            del outputs
+            torch.cuda.empty_cache()
 
 
-def main():
+def main(test_begin_index, test_end_index):
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+    run_identifier = f"{test_begin_index}-{test_end_index}-{timestamp}"
+
     test_file_infos = get_test()
-    test_begin_index, test_end_index = 4, 12
     slice_ = slice(test_begin_index, test_end_index)
-    outputs = list(inference(file_infos=test_file_infos[slice_], stream_outputs=True))
-    references = [get_ans(file_info) for file_info in test_file_infos[slice_]]
+    file_info_iterator = islice(test_file_infos, test_begin_index, test_end_index)
 
     bleu = evaluate.load("bleu")
+
+    outputs = []
+    references = []
+    for output in inference(file_infos=test_file_infos[slice_], stream_outputs=True):
+        reference = get_ans(next(file_info_iterator))
+        references.append(reference)
+
+        if isinstance(output, Exception):
+            # todo
+            outputs.append("")
+            result = {"error": str(output)}
+        else:
+            outputs.append(output)
+            result = bleu.compute(predictions=[output], references=[reference])
+
+        with open(
+            get_relative_path(f"results/progress-{run_identifier}.jsonl"), "a"
+        ) as f:
+            json.dump(result, f)
+            f.write("\n")
+
     results = bleu.compute(predictions=outputs, references=references)
     print(results)
+
     with open(
-        get_relative_path(f"results-{test_begin_index}-{test_end_index}.json"), "w"
+        get_relative_path(
+            f"results/{test_begin_index}-{test_end_index}-{timestamp}.json"
+        ),
+        "w",
     ) as f:
         json.dump(
             results,
@@ -104,11 +137,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-    # for file_info in get_test()[2:4]:
-    #     print("<>BEG<>")
-    #     print(get_ctx(file_info))
-    #     print("<>MID<>")
-    #     print(get_ans(file_info))
-    #     print("<>END<>")
-    #     print()
+    main(8, 16)
