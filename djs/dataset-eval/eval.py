@@ -96,7 +96,7 @@ def main(test_begin_index, test_end_index):
 
     test_file_infos = get_test()
     file_info_iterator = islice(test_file_infos, test_begin_index, test_end_index)
-    index_iterator = range(test_begin_index, test_end_index)
+    index_iterator = iter(range(test_begin_index, test_end_index))
 
     bleu = evaluate.load("bleu")
 
@@ -121,4 +121,4 @@ def main(test_begin_index, test_end_index):
 
 
 if __name__ == "__main__":
-    main(0, 4)
+    main(16, 32)
