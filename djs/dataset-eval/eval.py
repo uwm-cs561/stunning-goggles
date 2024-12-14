@@ -90,51 +90,35 @@ def inference(*, file_infos, local_model_name=None, stream_outputs=False):
 
 
 def main(test_begin_index, test_end_index):
-    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds").split("+")[0]
 
     run_identifier = f"{test_begin_index}-{test_end_index}-{timestamp}"
 
     test_file_infos = get_test()
-    slice_ = slice(test_begin_index, test_end_index)
     file_info_iterator = islice(test_file_infos, test_begin_index, test_end_index)
+    index_iterator = range(test_begin_index, test_end_index)
 
     bleu = evaluate.load("bleu")
 
-    outputs = []
-    references = []
-    for output in inference(file_infos=test_file_infos[slice_], stream_outputs=True):
+    print(f"Beginning tests on files {test_begin_index} to {test_end_index - 1}")
+
+    for output in inference(
+        file_infos=test_file_infos[test_begin_index:test_end_index], stream_outputs=True
+    ):
+        i = next(index_iterator)
         reference = get_ans(next(file_info_iterator))
-        references.append(reference)
 
         if isinstance(output, Exception):
-            # todo
-            outputs.append("")
             result = {"error": str(output)}
+            print(f"{i}: errored")
         else:
-            outputs.append(output)
             result = bleu.compute(predictions=[output], references=[reference])
+            print(f"{i}: bleu={result['bleu']}")
 
-        with open(
-            get_relative_path(f"results/progress-{run_identifier}.jsonl"), "a"
-        ) as f:
+        with open(get_relative_path(f"results/{run_identifier}.jsonl"), "a") as f:
             json.dump(result, f)
             f.write("\n")
 
-    results = bleu.compute(predictions=outputs, references=references)
-    print(results)
-
-    with open(
-        get_relative_path(
-            f"results/{test_begin_index}-{test_end_index}-{timestamp}.json"
-        ),
-        "w",
-    ) as f:
-        json.dump(
-            results,
-            f,
-            indent=2,
-        )
-
 
 if __name__ == "__main__":
-    main(8, 16)
+    main(0, 4)
