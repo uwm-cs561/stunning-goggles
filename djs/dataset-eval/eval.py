@@ -32,12 +32,8 @@ def get_relative_path(filename):
     return os.path.join(dir_path, filename)
 
 
-def inference(*, file_infos, local_model_name=None, stream_outputs=False):
-    model_name = (
-        os.path.join(SAVED_WEIGHTS_DIR, local_model_name)
-        if local_model_name is not None
-        else "unsloth/Llama-3.2-3B-Instruct-bnb-4bit"
-    )
+def inference(*, file_infos, local_model_abs_path=None, stream_outputs=False):
+    model_name = local_model_abs_path or "unsloth/Llama-3.2-3B-Instruct-bnb-4bit"
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=model_name,
@@ -89,7 +85,13 @@ def inference(*, file_infos, local_model_name=None, stream_outputs=False):
             torch.cuda.empty_cache()
 
 
-def main(test_begin_index, test_end_index):
+def main(
+    test_begin_index,
+    test_end_index,
+    local_model_abs_path=None,
+    stream_outputs=False,
+    model="base",
+):
     timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds").split("+")[0]
 
     run_identifier = f"{test_begin_index}-{test_end_index}-{timestamp}"
@@ -103,7 +105,9 @@ def main(test_begin_index, test_end_index):
     print(f"Beginning tests on files {test_begin_index} to {test_end_index - 1}")
 
     for output in inference(
-        file_infos=test_file_infos[test_begin_index:test_end_index], stream_outputs=True
+        file_infos=test_file_infos[test_begin_index:test_end_index],
+        stream_outputs=stream_outputs,
+        local_model_abs_path=local_model_abs_path,
     ):
         i = next(index_iterator)
         reference = get_ans(next(file_info_iterator))
@@ -115,10 +119,18 @@ def main(test_begin_index, test_end_index):
             result = bleu.compute(predictions=[output], references=[reference])
             print(f"{i}: bleu={result['bleu']}")
 
-        with open(get_relative_path(f"results/{run_identifier}.jsonl"), "a") as f:
+        with open(
+            get_relative_path(f"results/{model}-{run_identifier}.jsonl"), "a"
+        ) as f:
             json.dump(result, f)
             f.write("\n")
 
 
 if __name__ == "__main__":
-    main(128, 256)
+    main(
+        4,
+        8,
+        local_model_abs_path="/u/m/o/mondo/public/cs536/saved_weights/trained_model-2024-12-14-19-01-39",
+        stream_outputs=True,
+        model="finetune",
+    )
