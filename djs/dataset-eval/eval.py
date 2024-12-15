@@ -1,6 +1,6 @@
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "6"
 
 from unsloth import FastLanguageModel
 from transformers import TextStreamer
@@ -121,4 +121,4 @@ def main(test_begin_index, test_end_index):
 
 
 if __name__ == "__main__":
-    main(16, 32)
+    main(128, 256)
