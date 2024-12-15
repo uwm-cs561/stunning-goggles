@@ -54,10 +54,8 @@ def inference(*, file_infos, local_model_abs_path=None, stream_outputs=False):
                 "",  # output - leave this blank unless we want to start it off with something
             )
 
-            inputs = tokenizer(
-                [input_chars],
-                return_tensors="pt",
-            ).to("cuda")
+            inputs = tokenizer([input_chars], return_tensors="pt")
+            inputs = {key: value.cuda() for key, value in inputs.items()}
 
             if stream_outputs and len(file_infos) < 5:
                 text_streamer = TextStreamer(tokenizer)
@@ -79,10 +77,12 @@ def inference(*, file_infos, local_model_abs_path=None, stream_outputs=False):
         except Exception as e:
             yield e
         finally:
+            torch.cuda.synchronize()
+
             # free up GPU memory
             del inputs
             del outputs
-            torch.cuda.empty_cache()
+            # torch.cuda.empty_cache()
 
 
 def main(
@@ -128,9 +128,9 @@ def main(
 
 if __name__ == "__main__":
     main(
-        4,
-        8,
+        459,
+        512,
         local_model_abs_path="/u/m/o/mondo/public/cs536/saved_weights/trained_model-2024-12-14-19-01-39",
-        stream_outputs=True,
+        stream_outputs=False,
         model="finetune",
     )
