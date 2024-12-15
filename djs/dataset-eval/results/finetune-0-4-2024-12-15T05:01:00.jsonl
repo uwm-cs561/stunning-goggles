@@ -1,0 +1,4 @@
+{"bleu": 0.0, "precisions": [0.09090909090909091, 0.0, 0.0, 0.0], "brevity_penalty": 0.1623206111818482, "length_ratio": 0.3548387096774194, "translation_length": 11, "reference_length": 31}
+{"bleu": 0.0, "precisions": [0.06666666666666667, 0.0, 0.0, 0.0], "brevity_penalty": 0.8187307530779819, "length_ratio": 0.8333333333333334, "translation_length": 15, "reference_length": 18}
+{"bleu": 0.0, "precisions": [0.4, 0.0, 0.0, 0.0], "brevity_penalty": 5.588331392518268e-08, "length_ratio": 0.05649717514124294, "translation_length": 10, "reference_length": 177}
+{"bleu": 0.0, "precisions": [0.21052631578947367, 0.0, 0.0, 0.0], "brevity_penalty": 0.15035789770837657, "length_ratio": 0.34545454545454546, "translation_length": 19, "reference_length": 55}

@@ -51,7 +51,7 @@ def inference(*, local_model_name=None):
         [
             alpaca_prompt.format(
                 "Identify the error in the following log diff.",  # instruction
-                "",  # input
+                "TypeError: expected type int",  # input
                 "",  # output - leave this blank for generation!
             )
         ],
@@ -82,5 +82,5 @@ def inference(*, local_model_name=None):
 
 
 if __name__ == "__main__":
-    inference(local_model_name="diff_0_sliced")
+    inference()
     # inference()
