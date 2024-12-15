@@ -1,0 +1,138 @@
+@Article{Kang2023,
+  author        = {Kang, Sungmin and Chen, Bei and Yoo, Shin and Lou, Jian-Guang},
+  title         = {Explainable Automated Debugging via Large Language Model-driven Scientific Debugging},
+  year          = {2023},
+  month         = apr,
+  abstract      = {Automated debugging techniques have the potential to reduce developer effort in debugging, and have matured enough to be adopted by industry. However, one critical issue with existing techniques is that, while developers want rationales for the provided automatic debugging results, existing techniques are ill-suited to provide them, as their deduction process differs significantly from that of human developers. Inspired by the way developers interact with code when debugging, we propose Automated Scientific Debugging (AutoSD), a technique that given buggy code and a bug-revealing test, prompts large language models to automatically generate hypotheses, uses debuggers to actively interact with buggy code, and thus automatically reach conclusions prior to patch generation. By aligning the reasoning of automated debugging more closely with that of human developers, we aim to produce intelligible explanations of how a specific patch has been generated, with the hope that the explanation will lead to more efficient and accurate developer decisions. Our empirical analysis on three program repair benchmarks shows that AutoSD performs competitively with other program repair baselines, and that it can indicate when it is confident in its results. Furthermore, we perform a human study with 20 participants, including six professional developers, to evaluate the utility of explanations from AutoSD. Participants with access to explanations could judge patch correctness in roughly the same time as those without, but their accuracy improved for five out of six real-world bugs studied: 70% of participants answered that they wanted explanations when using repair tools, while 55% answered that they were satisfied with the Scientific Debugging presentation.},
+  archiveprefix = {arXiv},
+  copyright     = {Creative Commons Attribution 4.0 International},
+  doi           = {10.48550/ARXIV.2304.02195},
+  eprint        = {2304.02195},
+  file          = {:Kang2023 - Explainable Automated Debugging Via Large Language Model Driven Scientific Debugging.pdf:PDF:http\://arxiv.org/pdf/2304.02195v1},
+  groups        = {Related},
+  keywords      = {Software Engineering (cs.SE), FOS: Computer and information sciences},
+  primaryclass  = {cs.SE},
+  publisher     = {arXiv},
+}
+
+@Article{LeGoues2015,
+  author   = {Claire {Le Goues} and Neal Holtschulte and Edward K. Smith and Yuriy Brun and Premkumar Devanbu and Stephanie Forrest and Westley Weimer},
+  journal  = {IEEE Transactions on Software Engineering (TSE)},
+  title    = {The {ManyBugs} and {IntroClass} Benchmarks for Automated Repair of {C} Programs},
+  year     = {2015},
+  issn     = {0098-5589},
+  month    = {December},
+  number   = {12},
+  pages    = {1236--1256},
+  volume   = {41},
+  abstract = {The field of automated software repair lacks a set of common benchmark
+  problems. Although benchmark sets are used widely throughout computer
+  science, existing benchmarks are not easily adapted to the problem of
+  automatic defect repair, which has several special requirements. Most
+  important of these is the need for benchmark programs with reproducible,
+  important defects and a deterministic method for assessing if those defects
+  have been repaired. This article details the need for a new set of
+  benchmarks, outlines requirements, and then presents two datasets, ManyBugs
+  and IntroClass, consisting between them of 1,183 defects in 15 C programs.
+  Each dataset is designed to support the comparative evaluation of automatic
+  repair algorithms asking a variety of experimental questions. The datasets
+  have empirically defined guarantees of reproducibility and benchmark
+  quality, and each study object is categorized to facilitate qualitative
+  evaluation and comparisons by category of bug or program. The article
+  presents baseline experimental results on both datasets for three existing
+  repair methods, GenProg, AE, and TrpAutoRepair, to reduce the burden on
+  researchers who adopt these datasets for their own comparative evaluations.},
+  doi      = {10.1109/TSE.2015.2454513},
+  venue    = {TSE},
+}
+
+@Article{Jimenez2023,
+  author        = {Jimenez, Carlos E. and Yang, John and Wettig, Alexander and Yao, Shunyu and Pei, Kexin and Press, Ofir and Narasimhan, Karthik},
+  title         = {SWE-bench: Can Language Models Resolve Real-World GitHub Issues?},
+  year          = {2023},
+  month         = oct,
+  abstract      = {Language models have outpaced our ability to evaluate them effectively, but for their future development it is essential to study the frontier of their capabilities. We find real-world software engineering to be a rich, sustainable, and challenging testbed for evaluating the next generation of language models. To this end, we introduce SWE-bench, an evaluation framework consisting of $2,294$ software engineering problems drawn from real GitHub issues and corresponding pull requests across $12$ popular Python repositories. Given a codebase along with a description of an issue to be resolved, a language model is tasked with editing the codebase to address the issue. Resolving issues in SWE-bench frequently requires understanding and coordinating changes across multiple functions, classes, and even files simultaneously, calling for models to interact with execution environments, process extremely long contexts and perform complex reasoning that goes far beyond traditional code generation tasks. Our evaluations show that both state-of-the-art proprietary models and our fine-tuned model SWE-Llama can resolve only the simplest issues. The best-performing model, Claude 2, is able to solve a mere $1.96$% of the issues. Advances on SWE-bench represent steps towards LMs that are more practical, intelligent, and autonomous.},
+  archiveprefix = {arXiv},
+  copyright     = {Creative Commons Attribution 4.0 International},
+  doi           = {10.48550/ARXIV.2310.06770},
+  eprint        = {2310.06770},
+  file          = {:http\://arxiv.org/pdf/2310.06770v2:PDF},
+  keywords      = {Computation and Language (cs.CL), Artificial Intelligence (cs.AI), Software Engineering (cs.SE), FOS: Computer and information sciences},
+  primaryclass  = {cs.CL},
+  publisher     = {arXiv},
+}
+
+@InProceedings{Tomassi2019,
+  author    = {David A. Tomassi and Naji Dmeiri and Yichen Wang and Antara Bhowmick and Yen{-}Chuan Liu and Premkumar T. Devanbu and Bogdan Vasilescu and Cindy Rubio{-}Gonz{\'{a}}lez},
+  booktitle = {{ICSE}},
+  title     = {BugSwarm: mining and continuously growing a dataset of reproducible failures and fixes},
+  year      = {2019},
+  pages     = {339--349},
+  publisher = {{IEEE} / {ACM}},
+  groups    = {Dataset},
+  ranking   = {rank5},
+}
+
+@Article{Sun2024,
+  author        = {Sun, Qiushi and Chen, Zhirui and Xu, Fangzhi and Cheng, Kanzhi and Ma, Chang and Yin, Zhangyue and Wang, Jianing and Han, Chengcheng and Zhu, Renyu and Yuan, Shuai and Guo, Qipeng and Qiu, Xipeng and Yin, Pengcheng and Li, Xiaoli and Yuan, Fei and Kong, Lingpeng and Li, Xiang and Wu, Zhiyong},
+  title         = {A Survey of Neural Code Intelligence: Paradigms, Advances and Beyond},
+  year          = {2024},
+  month         = mar,
+  abstract      = {Neural Code Intelligence -- leveraging deep learning to understand, generate, and optimize code -- holds immense potential for transformative impacts on the whole society. Bridging the gap between Natural Language and Programming Language, this domain has drawn significant attention from researchers in both research communities over the past few years. This survey presents a systematic and chronological review of the advancements in code intelligence, encompassing over 50 representative models and their variants, more than 20 categories of tasks, and an extensive coverage of over 680 related works. We follow the historical progression to trace the paradigm shifts across different research phases (e.g., from modeling code with recurrent neural networks to the era of Large Language Models). Concurrently, we highlight the major technical transitions in models, tasks, and evaluations spanning through different stages. For applications, we also observe a co-evolving shift. It spans from initial endeavors to tackling specific scenarios, through exploring a diverse array of tasks during its rapid expansion, to currently focusing on tackling increasingly complex and varied real-world challenges. Building on our examination of the developmental trajectories, we further investigate the emerging synergies between code intelligence and broader machine intelligence, uncovering new cross-domain opportunities and illustrating the substantial influence of code intelligence across various domains. Finally, we delve into both the opportunities and challenges associated with this field, alongside elucidating our insights on the most promising research directions. An ongoing, dynamically updated project and resources associated with this survey have been released at https://github.com/QiushiSun/NCISurvey.},
+  archiveprefix = {arXiv},
+  copyright     = {Creative Commons Attribution 4.0 International},
+  doi           = {10.48550/ARXIV.2403.14734},
+  eprint        = {2403.14734},
+  file          = {:http\://arxiv.org/pdf/2403.14734v3:PDF},
+  keywords      = {Software Engineering (cs.SE), Artificial Intelligence (cs.AI), Computation and Language (cs.CL), Programming Languages (cs.PL), FOS: Computer and information sciences},
+  primaryclass  = {cs.SE},
+  publisher     = {arXiv},
+  ranking       = {rank4},
+}
+
+@InProceedings{Beller2017,
+  author    = {Beller, Moritz and Gousios, Georgios and Zaidman, Andy},
+  booktitle = {2017 IEEE/ACM 14th International Conference on Mining Software Repositories (MSR)},
+  title     = {TravisTorrent: Synthesizing Travis CI and GitHub for Full-Stack Research on Continuous Integration},
+  year      = {2017},
+  pages     = {447-450},
+  doi       = {10.1109/MSR.2017.24},
+  groups    = {Dataset},
+  keywords  = {Testing;Data mining;Java;History;Rails;Software},
+  ranking   = {rank5},
+}
+
+@ARTICLE{10017337,
+  author={Meng, Weibin and Zaiter, Federico and Zhang, Yuzhe and Liu, Ying and Zhang, Shenglin and Tao, Shimin and Zhu, Yichen and Han, Tao and Zhao, Yongpeng and Wang, En and Zhang, Yuzhi and Pei, Dan},
+  journal={IEEE Transactions on Network and Service Management}, 
+  title={LogSummary: Unstructured Log Summarization for Software Systems}, 
+  year={2023},
+  volume={20},
+  number={3},
+  pages={3803-3815},
+  keywords={Semantics;Software systems;Data mining;Kernel;Electronic mail;Protocols;Syntactics;AIOps;log analysis;log summarization},
+  doi={10.1109/TNSM.2023.3236994}
+}
+
+@misc{hu2021loralowrankadaptationlarge,
+      title={LoRA: Low-Rank Adaptation of Large Language Models}, 
+      author={Edward J. Hu and Yelong Shen and Phillip Wallis and Zeyuan Allen-Zhu and Yuanzhi Li and Shean Wang and Lu Wang and Weizhu Chen},
+      year={2021},
+      eprint={2106.09685},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2106.09685}, 
+}
+
+@Misc{link-habitica,
+  title = {an open-source habit-building program that treats your life like a role-playing game.},
+  url   = {https://github.com/HabitRPG/habitica},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}
+
+@Comment{jabref-meta: grouping:
+0 AllEntriesGroup:;
+1 StaticGroup:Related\;0\;1\;\;\;\;;
+1 StaticGroup:Dataset\;0\;1\;\;\;\;;
+}
