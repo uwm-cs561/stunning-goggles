@@ -3,5 +3,6 @@
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.tabSize": 4,
     "editor.formatOnSave": true
-  }
+  },
+  "notebook.formatOnSave.enabled": true
 }
