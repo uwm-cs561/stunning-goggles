@@ -11,8 +11,16 @@
 - Infrastructure setup (department-provided GPU machines)
 - Exploratory testing
 - Model fine-tuning (some assistance)
-- Model evaluation framework
+- Model evaluation
 - Writing this report
+
+
+= Example of Hunk and Context<h-appx-eghunk>
+
+#figure(
+  image("figure/log_hunk.png"),
+  caption: [An example of Hunk and Context]
+)
 
 
 = Training Code Excerpt

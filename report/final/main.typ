@@ -1,5 +1,6 @@
 #import "./template/neurips.typ": botrule, midrule, paragraph, toprule, url, neurips2024
 #import "@preview/timeliney:0.0.1"
+#import "@preview/subpar:0.2.0"
 
 #let affls = (
   uw: (
@@ -26,7 +27,7 @@
     In the modern software development landscape, complex tech stacks and automated CI/CD pipelines present unique challenges in error identification and debugging. We explore the potential of leveraging large language models to interpret log streams and assist in debugging, addressing the inefficiencies of current manual methods. We propose a fully-local, fine-tuned language model to identify errors within log texts, preserving proprietary information and providing context-specific insights. We utilize data from the open-source BugSwarm dataset to fine-tune a Llama-3.2 3B model using LoRA. We do not show notable improvement in model performance after fine-tuning. Ultimately, we conclude that alternative approaches will likely be more practical.
   ],
   bibliography: bibliography("main.bib"),
-  bibliography-opts: (title: none, full: true),  // Only for example paper.
+  bibliography-opts: (title: "References", full: true),  // Only for example paper.
   appendix: [
     #include "appendix.typ"
   ],
@@ -49,9 +50,16 @@ There is often no way to test whether you have fixed a pipeline error other than
 
 With the advent of large language models, the possibility of automated assistance in interpreting semi-structured and dynamic log streams is on the horizon. It is already possible to copy and paste your logs into ChatGPT and ask it questions, often receiving fairly helpful results. However, there are a few downsides to this: a) it may leak your proprietary information to third parties, and b) ChatGPT does not have the full context of your codebase, which may be necessary to properly contextualize the errors.
 
-A fully-local language model avoids the first issue, and fine-tuning it on a single specific codebase addresses the second. In order for this to be economically viable for a small organization, the model would need to be small and based on a pretrained open-source model. For example, the recently released Llama 3.2 with 1B parameters is advertised as fitting onto edge and mobile devices.
+A fully-local language model (LM) avoids the first issue, and fine-tuning it on a single specific codebase addresses the second. In order for this to be economically viable for a small organization, the model would need to be small and based on a pretrained open-source model. For example, the recently released Llama 3.2 with 1B parameters is advertised as fitting onto edge and mobile devices.
 
 As a first step towards generating natural-language "advice" on how to fix issues or even automatically generating fix code, the model must be able to identify the error from within the log text. This will be our focus in this project.
+
+Our core research questions are:
+
+- RQ1: Can a local version of a (consumer grade) open-source LM be used to identify errors?
+- RQ2: Can fine-tuning the LM on build log datasets increase its usefulness?
+
+Our general approach is to take a consumer-grade, open-source LM, fine-tune it on open-source data using consumer-grade hardware, and compare the performance of the base model with the fine-tuned model on a downstream evaluation task that asks the LM to essentially summarize a DevOps log by repeating back only the section relevant to the error. We reason that the first step towards machine-assisted solutions is identification of the problem.
 
 = Related Work
 // Related literature and how your proposal is different.
@@ -71,77 +79,101 @@ In summary, our work is different from prior work in that it brings together the
 = Methods
 // Formal definition and description of your problem. Details of the methods you used with paper quality descriptions. One should be able to replicate your results based on the details include in the paper.
 
-Our main progress so far has been in preparing the technical environment and collecting data. We have elected to use the unsloth python library in order to fine-tune using a Low-Rank Adaptation (LoRA) method (@hu2021loralowrankadaptationlarge). We are using unsloth's version of the Llama-3.2 3B Instruct model, from huggingface as unsloth/Llama-3.2-3B-Instruct-bnb-4bit.
-
-We have set up a training environment in a docker container based on Ubuntu 24.04 image on Mondo's personal computer, using an NVIDIA GeForce RTX 3070 Ti with 8GB memory. An excerpt of our fine-tuning code is in Appendix A.
-
-What is not shown in the excerpt is the details of the dataset being loaded. This is still in-progress, and in fact we have multiple datasets we are still working on processing into a useful form.
-
 == Data: BugSwarm
 
-In order to test the extent to which generic exposure to DevOps pipeline runs can elicit latent capabilities of the Llama model, we are working on incorporating training using this large and more diverse dataset, BugSwarm (@Tomassi2019). The dataset itself contains raw logs from paired failing and successful runs. We have generated a derived dataset using a diffing program to extract the differences in the log between the successful and failed runs. We believe lines that are added in the diff will be significantly more likely to contain relevant errors.
+We selected the BugSwarm dataset to use for fine-tuning (@Tomassi2019). The dataset itself contains raw logs from paired failing and successful runs. We have generated a derived dataset using a diffing program to extract the differences in the log between the successful and failed runs. We believe lines that are added in the diff will be significantly more likely to contain relevant errors.
 
-We managed to download around 4478 reproducible tasks and around 1965 paired raw build logs of passed and failed jobs for the tasks. We also generated diffs with different context window sizes, which will affect how many non-changed lines above or below a changed line are included in the diff output. We are using 0, 2, 4, and 8 as the context window sizes for our current experiments.
+// We managed to download around 4478 reproducible tasks and around 1965 paired raw build logs of passed and failed jobs for the tasks. We also generated diffs with different context window sizes, which will affect how many non-changed lines above or below a changed line are included in the diff output. We are using 20 as the context window sizes for our current experiments.
 
-We might also adopt another existing database (@Beller2017). We'll continue using these large-scale databases in the first stage of training to focus the model on understanding pipeline logs. After examining the raw logs and diffs, we found that there is a considerable amount of noise in the raw logs, such as progress indicators and temporary/random file name changes. We plan to generate a new set of training data by filtering out this noise using different methods. We will most likely be applying some diversity-based filtering here, following from a number of papers we've read in this class that all emphasize the importance of dataset diversity.
+BugSwarm contains build jobs from various Python and Java open-source projects, and also raw logs from paired failing and successful runs. We imported 4,455 pairs of build logs and generated silver labels by distilling the raw logs into diff hunks that capture only the "changes" between failed and passed logs. An overview of the dataset is provided in @tab-data. The methods used to clean the data are detailed in the following sections. After distilling, we managed to reduce the log size by approximately 50%.
 
-== Data Generation & Distillation
-
-We mainly build our training and testing dataset on top of BugSwarm. The database contains build jobs from various Python and Java open-source projects.  It includes raw logs from both paired failing and successful runs. We have imported 4455 pairs of build logs from BugSwarm, and generate our silver label by distilling the raw logs into diff hunks which only include "changes" from failed logs to passed logs.
-
-#table(
-  columns: (auto, auto, auto, auto),
-  align: center,
-  table.header(
-    table.cell(rowspan: 2, []), table.cell(colspan: 2, [*Sourcecode Type*]), table.cell(rowspan: 2, [Total]),
-    [Python], [Java], 
-    [Avg. Line Count(passed)],[2613],[8258],[5655],
-    [Avg. Line Count(passed, distilled)],[893],[4836],[3032 #text(fill: green)[-]],
-    [Avg. Line Count(failed)],[2803],[5196],[4084],
-    [Avg. Line Count(failed, distilled)],[1107],[3117],[2198],
-    [Avg. Char Count(passed)],[202301],[740882],[492095],
-    [Avg. Char Count(passed, distilled)],[65735],[450832],[274139],
-    [Avg. Char Count(failed)],[215747],[484425],[359556],
-    [Avg. Char Count(failed, distilled)],[78639],[287113],[191431],
-    [Avg. Hunk Count],[1.76],[1.76],[1.76],
-    [Avg. Hunk Char Size],[180],[476],[338],
-    [Avg. Hunk Char Size],[246],[629],[452],
+#figure(
+  table(
+    columns: (auto, 1fr, 1fr, 2fr),
+    align: left,
+    table.header(
+      table.cell(rowspan: 2, []), table.cell(colspan: 2, [*Sourcecode Type*]), table.cell(rowspan: 2, align: horizon, [*Total*]),
+      [*Python*], [*Java*], 
+      [*Task Count*], [1980], [2405], [4455],
+      [*Avg. Line Count* (passed)],[2613],[8258],[5655],
+      [*Avg. Line Count* (passed, distilled)],[893],[4836],[3032 #text(fill: green)[(-46.4%)]],
+      [*Avg. Line Count* (failed)],[2803],[5196],[4084],
+      [*Avg. Line Count* (failed, distilled)],[1107],[3117],[2198 #text(fill: green)[(-46.2%)]],
+      [*Avg. Char Count* (passed)],[202301],[740882],[492095],
+      [*Avg. Char Count* (passed, distilled)],[65735],[450832],[274139 #text(fill: green)[(-44.3%)]],
+      [*Avg. Char Count* (failed)],[215747],[484425],[359556],
+      [*Avg. Char Count* (failed, distilled)],[78639],[287113],[191431 #text(fill: green)[(-46.8%)]],
+      [*Avg. Hunk Count* (per task)],[1.76],[1.76],[1.76],
+      [*Avg. Hunk Char Size* (anwser)],[180],[476],[338],
+      [*Avg. Context Char Size* (question)],[246],[629],[452],
+    ),
   ),
+  caption: [Dataset Overview: This table shows the key statistics about the logs before and after our distillation process, including the average line and character count for both passed and failed logs. After noise reduction, the average length of the logs was significantly reduced.]
+)<tab-data>
+
+=== Timestamp & Garbage Removal
+
+To clean and preprocess raw logs, our first step is to remove irrelevent log lines, as shown in @fig-tsr. Using a pre-defined blacklist of regular expressions, we identified patterns that commonly appear in logs, such as branch updates, timestamps and random paths. By iterating through lines and applying the regular expression to filter out matches, we remove those non-informative lines and reduce noise level significantly.
+
+#subpar.grid(
+  figure(image("figure/log_ts.png"), caption: [Original log]),
+  figure(image("figure/log_ts_removed.png"), caption: [After removal]),
+  caption: [An example of timestamp removal],
+  columns: 2,
+  label: <fig-tsr>
 )
+
+=== ASCII Escape Code Detection
+
+ASCII escape codes#footnote[https://en.wikipedia.org/wiki/ANSI_escape_code#Control_Sequence_Introducer_commands] are a significant source of noise in the logs. These codes are typically generated by progress bars during the build process and, due to their repetitive nature, can occupy a substantial portion of the logs. However, they are irrelevant for error detection and debugging tasks.
+
+To address this, we systematically remove lines containing ‘Erase in Line’ and ‘Scroll Up & Erase Line’ sequences, effectively simulating the behavior of a terminal. This cleaning step ensures that the resulting dataset is free from visual artifacts, allowing the focus to remain on meaningful log content. An example of these escape codes and their removal is shown in @fig-psr.
+
+#subpar.grid(
+  figure(image("figure/log_progress.png"), caption: [Original log]),
+  figure(image("figure/log_progress_removed.png"), caption: [After timestamp removal]),
+  caption: [An example of terminal simulation],
+  columns: 2,
+  label: <fig-psr>
 )
-
-=== Timestamp Removal
-
-=== ASCII Control Sequence Detection
-
-By inspecting the logs, we found several obvious sources of noise that need to be cleaned:
-Timestamps
-Progress indicators
-Execution runner information
-Random paths
-By leveraging the ASCII escape characters in the raw log files and using pattern matching, we successfully obtained relatively cleaner data.
-
 
 === Label Generation
 
-Our label generation is based on the difference between the failed log and the passed log. 
-We treat the 'removed part' from failed to passed logs as the 'root cause' of the failure. 
-For each log pair, we generate multiple 'diff hunks' and their corresponding 'contexts.'
-We use context window lengths of 20 and 50.
+To identify the root cause of failures within build logs, we generate labels by analyzing the differences between paired failed and passed logs. The key assumption here is that the "removed part" from failed to passed logs represents the root cause of the failure. This method allows us to extract the most meaningful information about what caused the build to fail.
 
+Our process relies on a unified diff-based approach. For each log pair, we compute multiple *diff hunks* that encapsulate the changes between failed and passed logs. Each hunk is associated with its corresponding *context*, which includes surrounding lines from the logs for additional information. We use context window lengths of 20 and 50 to provide different levels of detail in the generated hunks.
 
+By iterating over the tasks and computing the diffs, we generate a labeled dataset in JSON format, which includes the task ID, hunk index, hunk content, and context. This structured data is then used for training and evaluation.
 
-
+An example of the hunk and its context is shown in Appendix @h-appx-eghunk.
 
 
 == Fine-tuning
 
-== Experiment: Zero-shot prompting
+We elected to use the Unsloth python library in order to fine-tune using a Low-Rank Adaptation (LoRA) method (@hu2021loralowrankadaptationlarge). We are using unsloth's version of the Llama-3.2 3B Instruct model, quantized, loaded from huggingface as unsloth/Llama-3.2-3B-Instruct-bnb-4bit. Our hardware was an NVIDIA GeForce RTX 2080 Ti. It had about 12GB of VRAM (11264MiB). We use mostly Unsloth's default recommended hyperparameters. An excerpt of our fine-tuning code is in Appendix A #footnote[The full code used for the entire project is available at https://github.com/uwm-cs561/stunning-goggles.].
+
+// #figure(
+//   ```python
+// CHAT_TEMPLATE = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+// You are an expert DevOps engineer. You are examining some logs. Your first task is to find which Lines, if any, contain errors. Examine the following logs.<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+// {INPUT}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+// {OUTPUT}<|eot_id|>"""
+//   ```
+// )
+
+We use a custom template, similar to the one described in @code-exp-prompt, to format the input-output pairs for the model. The hunks and their corresponding contexts are passed through this template, which structures them into a Hugging Face trl-compatible format. This transformation ensures that the data is properly formatted for training, with the hunks as the answer and the corresponding context as question. We split our data along a 90/10 train/test split. We ran our fine-tuning process on 4,000 randomly selected samples from the training set.
+
+
+== Experiment: Zero-shot prompting<h-exp-prompt>
 
 Our primary experimental methodology was to compare models using a zero-shot prompt, because this better matches the expected final use case of a tool like this (though it is possible a few-shot model could be implemented in a way that is opaque to the user by hiding it within a system prompt). 
 
 Our prompt template is:
 
+#figure(
 ```python
 prompt_template = """You are an expert DevOps engineer. You are examining some logs. Your first task is to find which lines, if any, contain errors. Examine the following logs.
 
@@ -153,12 +185,22 @@ Find the lines that contain the errors and repeat them verbatim, and then stop. 
 
 ### Response:
 {}"""
-```
+```,
+caption: [Prompt template]
+)<code-exp-prompt>
+
+The output of the LM was then compared against our expected output using the BLEU metric. Although designed to be a measure of translation accuracy, this metric is a general-purpose measure of string similarity. Any particular value here should not be interpreted as having any particular meaning, but a higher value tells us that the strings are more similar than a lower value. Values range between 0 and 1.
 
 = Results
 // Your experiments and results. Include the setup details so that it is replicable by others (models, baselines, metrics, etc.)
 
-We used a standard 90/10 train/test split on the log diff samples (as discussed above/*TODO - discuss above*/). We then took the first 512 of the test samples and evaluated the LM's performance on these.
+== Exploratory Testing
+
+We ran simple exploratory experiments by setting up the base model and prompting it in a fairly naive way; for example, providing it with context containing a subset of log lines from BugSwarm, and a simple prompt like "Identify the error in the following logs." This kind of exploratory testing gave us an idea of the model's baseline capabilities. The pretrained model without any additional fine-tuning seems to produce reasonable output to these sorts of questions, often giving seemingly helpful advice for how to fix the error in question.
+
+== Experiment: Zero-shot prompting
+
+We selected 512 random samples out of our test test, and evaluated the LM's performance on these (due to resource constraints, we could not evaluate on the whole set, but 512 was a somewhat arbitrary choice).
 
 First, a non-negligible fraction of samples caused our LM to crash during inference, both the base model and the fine-tuned one. Some of our samples were simply too large for the memory that was allocated on the device we were using. The fine-tuned model crashed with a slightly more diverse set of errors, but the overall number of crashes was almost identical.
 
@@ -173,21 +215,51 @@ In addition, both models had a tendency to produce results that were evaluated t
   [*Llama-3b*], [*41* (0.08)], [*242* (0.47)], [*0.076*], [*0.156*],
   [*Fine-tuned*], [*39* (0.08)], [*326* (0.64)], [*0.054*], [*0.174*]
 ),
-caption: [lorem ipsum]
+caption: [Summary Results]
 )
 
-The distribution of scores for the base and fine-tuned models 
+The distribution of scores for the base and fine-tuned models was similar, besides the fine-tuned model's increased number of 0 scores. A histogram of scores is shown in @fig:histograms.
 
 #figure(
   grid(columns: 2,
-  image("base-hist.png"),
-  image("fine-hist.png"),
-),
-caption: [Histogram of BLEU scores, with errors and scores of 0 excluded]
-)
+    image("base-hist.png"),
+    image("fine-hist.png"),
+  ),
+  caption: [Histogram of BLEU scores, with errors and scores of 0 excluded because the number of these is at a vastly different scale.]
+)<fig:histograms>
 
-= Discussion & Future Work
-// Discussion and conclusion of your results and proposal of future work.
+Additionally, we compared the models' performance on a per-sample basis. Since each model was given the same evaluation set of 512 prompts, we calculated the increase or decrease in BLEU score for each sample (excluding samples where either model ran into an error). The results can be seen in @fig:delta-bleu.
 
+#figure(
+  image("delta-bleu.png"),
+  caption: [The degradation or improvement in BLEU score on a per-sample basis. The deltas were calculated, and then the results were reranked from "worst" to "best" - that is, from the sample where fine-tuning had the largest degradation, to the sample where fine-tuning showed the most improvement. Samples where either model crashed were excluded.]
+)<fig:delta-bleu>
 
-= References
+= Discussion
+// Discussion and conclusion of your results 
+
+We sought to answer the following research questions:
+
+- RQ1: Can a local version of a (consumer grade) open-source LM be used to identify errors?
+- RQ2: Can fine-tuning the LM on build log datasets increase its usefulness?
+
+RQ1 was a "buy-in" question. If a consumer-grade LM was not powerful enough to do anything useful in this domain, then no amount of fine-tuning would grant it the capability. We answered this question through qualitative and exploratory testing; frankly, it is not the interesting research question.
+
+The answer to RQ2 remains inconclusive. We did not demonstrate a method to fine-tune an LM to increase its performance on our log-summarization task. After fine-tuning, the model performed worse averaged across our samples. However, excluding the responses that got a BLEU score of 0, the fine-tuned model performed better. This could be justified by qualitative analysis of the actual content of the responses; perhaps the fine-tuned model was more likely to say "there is no error" and just be flat-out wrong, but when it did report an error, it gave better responses.
+
+The larger question motivating this research, however, is whether LMs can be useful to DevOps engineers, not whether LMs can perform better or worse on this specific task. In our exploratory experiments, it seemed that the model was capable of providing useful feedback. It may be the case that our framing of the problem as a smaller, more measurable question is simply unnecessarily limiting to an LM that has already trained a more broad and useful capability.
+
+What's more, our experiments indicate that fine-tuning an LM on commodity hardware leads to significant challenges, especially in terms of resource usage and performance. Despite applying LoRA techniques to minimize memory usage and improve efficiency, we encountered several limitations during the training process. The hardware constraints, including limited GPU memory, led to frequent crashes and freezes, especially when processing larger log samples.
+
+It may be more practical to explore alternative approaches, such as using specialized models designed for log analysis or error detection. They could provide better performance without the heavy computational burden of LMs. Moreover, leveraging non-LM models like task-specific neural architectures might give us more reliable and scalable solutions for our task.
+
+Another alternative is simply to integrate off-the-shelf LMs with an open-ended chat process and ask them open-ended questions you want answers to, rather than jumping through a lot of hoops trying to get them to produce some precise response in a highly-quantified task.
+
+= Future Work
+// proposal of future work.
+
+The most immediate next step would be to refactor (and reimplement as needed) our training and evaluation process, perhaps acquiring better hardware, either directly or by farming out the training to a service. We could use more larger models, quantize them less, and fine-tune them using different LoRA parameters or even run full fine-tuning. The biggest obstacle this research faced was lack of resources.
+
+Another very useful direction would be the acquisition or production of better datasets. @Beller2017 and @10017337 both present datasets that we believe could be usefully applied to this task. In general, a dataset with human-generated gold labels would highly useful, but expensive to acquire, because it would require experts to produce the labels.
+
+On the topic of data, implementing dataset selection, active learning, or other label-efficient methods would be the obvious next step to handle the resource issues. Using Fisher Embeddings for active learning as proposed by @gone-fishing or selecting a subset of data to train on based on diversity measurements as proposed by @wang2024diversitymeasurementsubsetselection could be fruitful.
